@@ -1,1 +1,1 @@
-# sentiment-analysis-in-ce
+# Sentiment Analysis in Correspondence Experiments
