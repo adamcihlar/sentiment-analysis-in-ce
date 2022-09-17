@@ -129,5 +129,3 @@ dmypy.json
 .pyre/
 
 ### User defined section
-data
-models
