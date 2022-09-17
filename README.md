@@ -3,5 +3,5 @@
 ### Description
 * TBD
 
-### Development setup
+### Development environment activation
 *pyenv activate sentiment-analysis-in-ce*
