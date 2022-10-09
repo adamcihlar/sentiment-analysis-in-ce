@@ -1,4 +1,4 @@
-dowload_raw_data:
+download_raw_data:
 	python -m src.loading.download_data
 
 get_raw_data: 
