@@ -1,11 +1,11 @@
 FROM python:3.8-buster
 
 #RUN apt-get update -y && apt-get install -y \
-RUN apt-get install -yqq --no-install-recommends \
-tmux \
-tree \
-vim \
-&& rm -rF /var/lib/apt/lists/*
+#RUN apt-get install -yqq --no-install-recommends \
+#tmux \
+#tree \
+#vim \
+#&& rm -rF /var/lib/apt/lists/*
 
 # fix encoding issues
 ENV LC_ALL=C.UTF-8
