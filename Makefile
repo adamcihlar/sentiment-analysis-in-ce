@@ -24,4 +24,4 @@ build_image:
 	docker image prune -f
 
 run_image:
-	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce /bin/bash
+	docker run --rm --dns 8.8.8.8 -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce /bin/bash
