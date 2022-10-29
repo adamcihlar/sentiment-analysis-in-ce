@@ -1,5 +1,6 @@
 asttokens==2.0.8
 backcall==0.2.0
+datasets==2.5.1
 decorator==5.1.1
 executing==1.0.0
 ipython==8.5.0
@@ -17,7 +18,10 @@ pure-eval==0.2.2
 Pygments==2.13.0
 python-dateutil==2.8.2
 pytz==2022.2.1
+scikit-learn==1.1.2
+scipy==1.16.0
 six==1.16.0
+sklearn==0.0
 stack-data==0.5.0
 tokenizers==0.12.1
 torch==1.12.1
