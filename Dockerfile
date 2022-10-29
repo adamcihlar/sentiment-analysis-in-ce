@@ -1,7 +1,7 @@
 FROM python:3.8-buster
 
 #RUN apt-get update -y && apt-get install -y \
-RUN apt-get install -yqq --no-install-recommends\
+RUN apt-get install -yqq --no-install-recommends \
 tmux \
 tree \
 vim \
