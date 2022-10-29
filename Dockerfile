@@ -20,5 +20,5 @@ RUN echo " setw -g mouse on" >> ~/.tmux.conf
 # copy the directory and install libraries
 COPY . app
 WORKDIR app
-RUN make install
+#RUN make install
 
