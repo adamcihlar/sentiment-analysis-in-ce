@@ -13,11 +13,14 @@ ENV LANG=C.UTF-8
 # enable mouse support for tmux
 RUN echo " setw -g mouse on" >> ~/.tmux.conf
 
-# I want interactive python environment
-RUN pip install ipython
-
-# copy the directory and install libraries
+# copy the directory
 COPY . app
 WORKDIR app
+
+# I want interactive python environment
+RUN pip install ipython
+RUN echo 'alias ipython="ipython --no-autoindent"' >> ~/.bashrc
+
+# install libraries 
 RUN make install
 
