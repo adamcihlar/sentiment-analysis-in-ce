@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from loguru import logger
 
 from src.config import paths
 
