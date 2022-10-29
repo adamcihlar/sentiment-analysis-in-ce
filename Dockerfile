@@ -4,7 +4,7 @@ RUN apt-get update -y && apt-get install -y \
 tmux \
 tree \
 vim \
-&& rm -rF /var/lib/apt/lists/*
+&& rm -rf /var/lib/apt/lists/*
 
 # fix encoding issues
 ENV LC_ALL=C.UTF-8
