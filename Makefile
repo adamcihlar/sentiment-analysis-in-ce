@@ -20,8 +20,10 @@ install: install_requirements
 
 docker_build_dev:
 	docker image prune -f
-	docker build -t sentiment_analysis_in_ce_dev ./docker/dev
+	yes | cp -rf ./docker/dev/Dockerfile Dockerfile
+	docker build -t sentiment_analysis_in_ce_dev .
 	docker image prune -f
+	rm -f Dockerfile
 
 docker_run_dev:
 	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_dev /bin/bash

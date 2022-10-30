@@ -21,6 +21,6 @@ WORKDIR app
 RUN pip install ipython
 RUN echo 'alias ipython="ipython --no-autoindent"' >> ~/.bashrc
 
-# go back to root and install libraries 
-RUN cd /app && make install
+# install libraries 
+RUN make install
 
