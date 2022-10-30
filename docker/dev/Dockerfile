@@ -14,7 +14,7 @@ ENV LANG=C.UTF-8
 RUN echo " setw -g mouse on" >> ~/.tmux.conf
 
 # copy the directory
-COPY $(git rev-parse --show-toplevel) app
+COPY . app
 WORKDIR app
 
 # I want interactive python environment
@@ -22,6 +22,6 @@ RUN pip install ipython
 RUN echo 'alias ipython="ipython --no-autoindent"' >> ~/.bashrc
 
 # go back to git root and install libraries 
-#RUN cd $(git rev-parse --show-toplevel)
+RUN cd /app
 RUN make install
 
