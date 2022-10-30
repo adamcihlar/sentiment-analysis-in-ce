@@ -22,5 +22,5 @@ RUN pip install ipython
 RUN echo 'alias ipython="ipython --no-autoindent"' >> ~/.bashrc
 
 # install libraries 
-RUN make install
+#RUN make install
 
