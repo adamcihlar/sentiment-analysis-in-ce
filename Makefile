@@ -18,10 +18,10 @@ install_requirements:
 install: install_requirements
 	pip install -e .
 
-build_image:
+docker_build:
 	docker image prune -f
 	docker build -t sentiment_analysis_in_ce .
 	docker image prune -f
 
-run_image:
+docker_run_dev:
 	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce /bin/bash
