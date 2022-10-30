@@ -1,5 +1,6 @@
 from tqdm import tqdm
 import pandas as pd
+import numpy as np
 
 from sklearn.model_selection import train_test_split
 import torch
@@ -42,9 +43,9 @@ val_dataset = Dataset(X_val_tok, list(y_val))
 test_dataset = Dataset(X_test_tok, list(y_test))
 
 # create dataloaders
-train_dataloader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=4)
-val_dataloader = DataLoader(val_dataset, batch_size=4, num_workers=4)
-test_dataloader = DataLoader(test_dataset, batch_size=4, num_workers=4)
+train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=2)
+val_dataloader = DataLoader(val_dataset, batch_size=16, num_workers=2)
+test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=2)
 
 # load model
 model = RobertaForSequenceClassification.from_pretrained(
@@ -74,8 +75,8 @@ model = RobertaForSequenceClassification.from_pretrained(
 # 6.-15. epochs - whole model is trained, lr cosine decay back to zero
 
 # specify training details
-optimizer = AdamW(model.parameters(), lr=1e-5)
-num_epochs = 3
+optimizer = AdamW(model.parameters(), lr=3e-5)
+num_epochs = 1
 num_training_steps = num_epochs * len(train_dataloader)
 scheduler = get_scheduler(
     name="linear",
