@@ -9,9 +9,10 @@
     3. FERNETs are pretrained on less formal data, but that is probably something I don't really want
     * Overall Robeczech seems like the most reasonable option
 - [ ] Finetune selected models on sentiment datasets
+    * Create a nice training script - modularize the current spaghetti
     * On all at once? One by one?
     * First, try to replicate the results from the Robeczech paper, if I can get there, then I might try improving it
-- [ ] Learn how to run the code on Metacentrum
+- [x] Learn how to run the code on Metacentrum
 - [ ] Preprocess data
 	* How? Inspiration here https://is.muni.cz/th/n0lnb/Sentiment_Analysis_cz.pdf + other Czech papers dealing with sentiment analysis
 	* Do I really need big preprocessing if I am using BERT-like tokenizers?
