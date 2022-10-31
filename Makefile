@@ -26,7 +26,7 @@ docker_build_dev:
 	rm -f Dockerfile
 
 docker_run_dev:
-	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_dev /bin/bash
+	docker run -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_dev /bin/bash
 
 docker_connect:
 	docker exec -it "$$(docker ps -q)" /bin/bash
