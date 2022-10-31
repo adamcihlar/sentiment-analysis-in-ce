@@ -19,8 +19,7 @@ WORKDIR app
 
 # I want interactive python environment
 RUN pip install ipython
-RUN echo 'alias ipython="ipython --no-autoindent"' >> ~/.bashrc \
-'alias dconnect="docker exec -it "$(docker ps -q)" /bin/bash"' >> ~/.bashrc
+RUN echo 'alias ipython="ipython --no-autoindent"' >> ~/.bashrc
 
 # install libraries 
 RUN make install
