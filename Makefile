@@ -1,8 +1,8 @@
 download_raw_data:
-	python -m src.loading.download_data
+	python -m src.ingestion.download_data
 
 get_raw_data: 
-	python -m src.loading.get_raw_data
+	python -m src.ingestion.get_raw_data
 
 preprocess_raw_data: get_raw_data
 	python -m src.preprocessing.preprocess_csfd
