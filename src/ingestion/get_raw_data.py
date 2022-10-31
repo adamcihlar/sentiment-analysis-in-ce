@@ -5,7 +5,7 @@ from loguru import logger
 from typing import List
 
 from src.config import paths
-from src.loading.download_data import download_csfd, download_mall, download_facebook
+from src.ingestion.download_data import download_csfd, download_mall, download_facebook
 
 
 def _check_zip_file(path_to_file):
