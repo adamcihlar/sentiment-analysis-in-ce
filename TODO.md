@@ -10,6 +10,12 @@
     * Overall Robeczech seems like the most reasonable option
 - [ ] Finetune selected models on sentiment datasets
     * Create a nice training script - modularize the current spaghetti
+    	- Probably it would be good to have one class for my final "classifier" with methods like:
+		- "finetune on source"
+		- "finetune on target"
+		- appropriate init
+		- inference
+	- First, go through the current code and try to split it to reasonable parts
     * On all at once? One by one?
     * First, try to replicate the results from the Robeczech paper, if I can get there, then I might try improving it
 - [x] Learn how to run the code on Metacentrum
