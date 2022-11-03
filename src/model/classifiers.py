@@ -70,9 +70,9 @@ class AdaptiveSentimentClassifier:
         preprocessor,
         tokenizer,
         source_encoder,
-        classifier=None,
+        classifier,
+        discriminator,
         target_encoder=None,
-        discriminator=None,
     ):
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
