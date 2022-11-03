@@ -23,6 +23,14 @@
 	* How? Inspiration here https://is.muni.cz/th/n0lnb/Sentiment_Analysis_cz.pdf + other Czech papers dealing with sentiment analysis
 	* Do I really need big preprocessing if I am using BERT-like tokenizers?
 	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
+- [ ] Create the ClassificationDataset class
+    * It will be able to create and store the torch dataset instance
+    * It will be able to create and store the torch dataloader instance
+    * It will be able to preprocess and tokenize its inputs
+- [ ] Model classes
+    * Classifiers
+    * Encoder
+
 
 ### Continuous
 - [ ] Orchestrate the pipeline with makefile
