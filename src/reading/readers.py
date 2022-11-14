@@ -31,3 +31,10 @@ def read_mall(path=paths.DATA_PROCESSED_MALL):
         df = pd.read_csv(path, index_col=0)
         return df
     return None
+
+
+def read_all_source(path=paths.DATA_PROCESSED_CONCAT):
+    if _check_file(path):
+        df = pd.read_csv(path, index_col=0)
+        return df
+    return None
