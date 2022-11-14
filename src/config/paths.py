@@ -1,5 +1,6 @@
 import os
 
+# DATA
 DATA = "data"
 
 # RAW
@@ -21,3 +22,9 @@ DATA_PROCESSED_CSFD = os.path.join(DATA_PROCESSED, "csfd.csv")
 DATA_PROCESSED_MALL = os.path.join(DATA_PROCESSED, "mall.csv")
 
 DATA_PROCESSED_CONCAT = os.path.join(DATA_PROCESSED, "concat_dataset.csv")
+
+# OUTPUT
+OUTPUT = "output"
+
+# PREDICTIONS
+OUTPUT_PREDICTIONS = os.path.join(OUTPUT, "predictions")
