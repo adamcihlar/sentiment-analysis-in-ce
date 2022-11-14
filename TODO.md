@@ -18,18 +18,23 @@
 	- First, go through the current code and try to split it to reasonable parts
     * On all at once? One by one?
     * First, try to replicate the results from the Robeczech paper, if I can get there, then I might try improving it
+    * Output of the final model should be on scale 0-1 (~negative-positive) so I can either drop the neutral class and make it binary classification problem or I could use "distilation loss function" and give the neutral class value 0.5
 - [x] Learn how to run the code on Metacentrum
 - [ ] Preprocess data
 	* How? Inspiration here https://is.muni.cz/th/n0lnb/Sentiment_Analysis_cz.pdf + other Czech papers dealing with sentiment analysis
 	* Do I really need big preprocessing if I am using BERT-like tokenizers?
 	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
+	* I need at least some kind of preprocessing for the emails
 - [ ] Create the ClassificationDataset class
     * It will be able to create and store the torch dataset instance
     * It will be able to create and store the torch dataloader instance
     * It will be able to preprocess and tokenize its inputs
+    * It will be able to transform labels/take only subset of the data based on labels
+    * Splitting to train, val, test will not be its method, will be a separate function
 - [ ] Model classes
     * Classifiers
-    * Encoder
+    * Encoders - just to load correct models by default and simplify the forward method to output only the embeddings
+    * Tokenizer - just to load correct models by default
 
 
 ### Continuous
