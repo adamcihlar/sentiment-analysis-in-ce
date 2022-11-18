@@ -3,6 +3,8 @@ import torch
 from typing import List
 
 
+def split_train_val_test
+
 class Dataset(torch.utils.data.Dataset):
     """Keeps data in format accepted by the torch Dataloader."""
 
@@ -29,14 +31,38 @@ class ClassificationDataset:
 
     def __init__(
         self,
-        X: List[str],
-        y: List = None,
+        X: pd.Series,
+        y: pd.Series,
     ):
-        self.X = X
-        self.y = y
+        """
+        Stores the texts and labels.
+        Drops rows where label is not in (0, 1, 2).
+        """
+        if y is not None:
+            self.X = X.loc[self.y.isin([0, 1, 2])]
+            self.y = y.loc[self.y.isin([0, 1, 2])]
+        else:
+            self.X = X
+            self.y = y
         self.X_tok = None
         self.X_preprocessed = None
         self.y_pred = None
+
+    def transform_labels_to_scale(self, drop_neutral=True):
+        """
+        Based on how I want to finetune the source classifier, I need to transform the labels.
+        I can either drop the neutral class to have binary classification or make it 0.5 and finetune in distilationlike settings.
+        """
+        if drop_neutral:
+            self.X = self.X.loc[self.y.isin([0, 1])]
+            self.y = self.y.loc[self.y.isin([0, 1])]
+
+
+    def report_metric(self, metric):
+        """
+        Return the selected metric based on the true and predicted labels.
+        """
+        pass
 
     def preprocess(self, preprocessor):
         """
