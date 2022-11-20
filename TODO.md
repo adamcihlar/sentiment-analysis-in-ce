@@ -9,6 +9,16 @@
     3. FERNETs are pretrained on less formal data, but that is probably something I don't really want
     * Overall Robeczech seems like the most reasonable option
 - [ ] Finetune selected models on sentiment datasets
+    * No further pretraining - I don't want the encoder to match the domain perfectly
+    * Decide on the parameters and finetune - doesn't have to be serious but to have the "finetuned" model ready
+    * Decide on what parameters might be changing during the training so that I can write the finetune method
+    * Parameters as per finetuning BERT paper
+    	* Layerwise learning rate decay = 0.95
+	* Dropout = 0.1
+	* Adam optimizer (b1 = 0.9, b2 = 0.999)
+	* linear schedule with warmup (warmup proportion = 0.1)
+	* base learning rate = 2e-5
+	* n_epochs = 4
     * Create a nice training script - modularize the current spaghetti
     	- Probably it would be good to have one class for my final "classifier" with methods like:
 		- "finetune on source"
@@ -25,7 +35,7 @@
 	* Do I really need big preprocessing if I am using BERT-like tokenizers?
 	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
 	* I need at least some kind of preprocessing for the emails
-- [ ] Create the ClassificationDataset class
+- [x] Create the ClassificationDataset class
     * It will be able to create and store the torch dataset instance
     * It will be able to create and store the torch dataloader instance
     * It will be able to preprocess and tokenize its inputs
