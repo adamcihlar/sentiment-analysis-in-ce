@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
+from loguru import logger
 
 from sklearn.model_selection import train_test_split
 import torch
@@ -10,42 +11,48 @@ from torch.utils.data import DataLoader
 from transformers import RobertaTokenizer, RobertaForSequenceClassification
 from datasets import load_metric
 
-from src.utils.dataset import Dataset
-from src.reading.readers import read_facebook
-
-
-df = read_facebook()
-df = df.loc[df.label.isin([0, 1])]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    df["text"], df["label"], test_size=0.2, random_state=42
+from src.reading.readers import read_facebook, read_mall, read_csfd
+from src.utils.datasets import (
+    ClassificationDataset,
+    drop_undefined_classes,
+    transform_labels_to_probs,
+    get_finetuning_datasets,
 )
-X_val, X_test, y_val, y_test = train_test_split(
-    X_test, y_test, test_size=0.5, random_state=42
-)
+from src.model.tokenizers import Tokenizer
+from src.utils.text_preprocessing import Preprocessor
 
-tokenizer = RobertaTokenizer.from_pretrained("ufal/robeczech-base")
 
-# tokenize texts
-X_train_tok = tokenizer(
-    list(X_train), padding="max_length", max_length=512, truncation=True
-)
-X_val_tok = tokenizer(
-    list(X_val), padding="max_length", max_length=512, truncation=True
-)
-X_test_tok = tokenizer(
-    list(X_test), padding="max_length", max_length=512, truncation=True
-)
+source_mall = read_mall()
+source_facebook = read_facebook()
+source_csfd = read_csfd()
+datasets = [source_mall, source_facebook, source_csfd]
 
-# load data to torch Datasets
-train_dataset = Dataset(X_train_tok, list(y_train))
-val_dataset = Dataset(X_val_tok, list(y_val))
-test_dataset = Dataset(X_test_tok, list(y_test))
+source_dataset = drop_undefined_classes(source_dataset)
+source_dataset = transform_labels_to_probs(source_dataset, drop_neutral=True)
 
-# create dataloaders
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=2)
-val_dataloader = DataLoader(val_dataset, batch_size=16, num_workers=2)
-test_dataloader = DataLoader(test_dataset, batch_size=16, num_workers=2)
+preprocessor = Preprocessor()
+tokenizer = Tokenizer()
+
+source_train_df, source_val_df = get_finetuning_datasets(source_dataset)
+
+source_train = ClassificationDataset(
+    X=source_train_df.text, y=source_train_df.label, source=source_train_df.source
+)
+source_train.preprocess(preprocessor)
+source_train.tokenize(tokenizer)
+source_train.create_dataset()
+source_train.create_dataloader(batch_size=1)
+
+next(iter(source_train.torch_dataloader))
+
+list(source_train.source)[0]
+
+source_val = ClassificationDataset(X=source_val_df.text, y=source_val_df.label)
+source_val.preprocess(preprocessor)
+source_val.tokenize(tokenizer)
+source_val.create_dataset()
+source_val.create_dataloader()
+
 
 # load model
 model = RobertaForSequenceClassification.from_pretrained(
@@ -73,6 +80,12 @@ model = RobertaForSequenceClassification.from_pretrained(
 # 1. epoch - only classifier is trained, lr=1e-3
 # 2.-5. epochs - whole model is trained, lr cosine warm up from zero to 3e-5
 # 6.-15. epochs - whole model is trained, lr cosine decay back to zero
+
+# In paper:
+# How to Fine-Tune BERT for Text Classification?
+# 1. Take the last layer as embeddings
+# 2. If sequence is longer than 512 tokens, take first 128 and last 382 - would be
+
 
 # specify training details
 optimizer = AdamW(model.parameters(), lr=3e-5)
