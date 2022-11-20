@@ -206,6 +206,7 @@ def get_source_datasets_ready_for_finetuning(
     val_datasets = [
         ClassificationDataset(ds.text, ds.label, ds.source) for ds in val_datasets
     ]
+
     [ds.preprocess(preprocessor) for ds in train_datasets]
     [ds.tokenize(tokenizer) for ds in train_datasets]
     [ds.create_dataset() for ds in train_datasets]
@@ -215,6 +216,7 @@ def get_source_datasets_ready_for_finetuning(
         )
         for ds in train_datasets
     ]
+
     [ds.preprocess(preprocessor) for ds in val_datasets]
     [ds.tokenize(tokenizer) for ds in val_datasets]
     [ds.create_dataset() for ds in val_datasets]

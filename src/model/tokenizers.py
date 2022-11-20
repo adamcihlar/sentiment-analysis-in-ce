@@ -32,16 +32,16 @@ class Tokenizer:
         """
         if combined_truncation:
             tok_texts_long = self.model(texts, max_length=2048, padding="max_length")
-            tok_texts_truncated = [
+            tok_texts_long = [
                 self.__truncate_tokenized_sequence__(tok)
                 for tok in zip(
                     tok_texts_long["input_ids"], tok_texts_long["attention_mask"]
                 )
             ]
-            tok_texts_truncated = list(zip(*tok_texts_truncated))
+            tok_texts_long = list(zip(*tok_texts_long))
             tok_texts = dict()
-            tok_texts["input_ids"] = list(tok_texts_truncated[0])
-            tok_texts["attention_mask"] = list(tok_texts_truncated[1])
+            tok_texts["input_ids"] = list(tok_texts_long[0])
+            tok_texts["attention_mask"] = list(tok_texts_long[1])
         else:
             tok_texts = self.model(
                 texts, max_length=max_length, padding="max_length", truncation=True
