@@ -12,12 +12,7 @@ from transformers import RobertaTokenizer, RobertaForSequenceClassification
 from datasets import load_metric
 
 from src.reading.readers import read_facebook, read_mall, read_csfd
-from src.utils.datasets import (
-    ClassificationDataset,
-    drop_undefined_classes,
-    transform_labels_to_probs,
-    get_finetuning_datasets,
-)
+from src.utils.datasets import get_source_datasets_ready_for_finetuning
 from src.model.tokenizers import Tokenizer
 from src.utils.text_preprocessing import Preprocessor
 
@@ -26,6 +21,16 @@ source_mall = read_mall()
 source_facebook = read_facebook()
 source_csfd = read_csfd()
 datasets = [source_mall, source_facebook, source_csfd]
+
+train_datasets, val_datasets = get_source_datasets_ready_for_finetuning(
+    datasets,
+    drop_neutral=True,
+    preprocessor=Preprocessor(),
+    tokenizer=Tokenizer(),
+    batch_size=64,
+    shuffle=True,
+    num_workers=0,
+)
 
 source_dataset = drop_undefined_classes(source_dataset)
 source_dataset = transform_labels_to_probs(source_dataset, drop_neutral=True)
