@@ -1,3 +1,4 @@
+from typing import List
 import torch
 from transformers import (
     RobertaTokenizer,
@@ -6,7 +7,7 @@ from transformers import (
 )
 from torch.utils.data import DataLoader
 
-from src.utils.dataset import Dataset
+from src.utils.datasets import Dataset
 
 
 class ClassificationHead(torch.nn.Module):
@@ -19,7 +20,7 @@ class ClassificationHead(torch.nn.Module):
         """
 
     def __init__(
-        self, input_size=768, hidden_size=768, num_classes=1, dropout=0.3, model=None
+        self, input_size=768, hidden_size=768, num_classes=1, dropout=0.1, model=None
     ):
         super(ClassificationHead, self).__init__()
         if model is not None:
@@ -27,8 +28,8 @@ class ClassificationHead(torch.nn.Module):
         else:
             self.model = torch.nn.Sequential(
                 torch.nn.Dropout(dropout),
-                torch.nn.Linear(input_size, hidden_size),
-                torch.nn.ReLU()
+                # torch.nn.Linear(input_size, hidden_size),
+                # torch.nn.ReLU()
                 torch.nn.Dropout(dropout)
                 torch.nn.Linear(hidden_size, num_classes)
                 torch.nn.Sigmoid()
@@ -70,32 +71,36 @@ class AdaptiveSentimentClassifier:
         preprocessor,
         tokenizer,
         source_encoder,
-        classifier,
+        classifier: List,
         discriminator,
         target_encoder=None,
     ):
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
         self.source_encoder = source_encoder
-        self.classifier = classifier
+        self.classifiers = classifiers
         self.target_encoder = target_encoder
         self.discriminator = discriminator
 
+    def finetune(
+        train_classification_dataset,
+        val_classification_dataset,
+        optimizer,
+        lr_scheduler,
+        num_epochs,
+    ):
+        # init the whole classification model
+        # - concat the source_encoder with the classifier
+        pass
+
+
 
 if __name__ == "__main__":
-    tokenizer = RobertaTokenizer.from_pretrained("ufal/robeczech-base")
-    source_encoder = RobertaForSequenceClassification.from_pretrained(
-        "ufal/robeczech-base"
-    )
+    from src.model.encoders import Encoder
+    encoder = Encoder()
+    encoder
     source_encoder = RobertaModel.from_pretrained("ufal/robeczech-base")
 
-    dir(source_encoder.classifier)
-    source_encoder.classifier
-    dir(source_encoder)
-    ll = torch.nn.Linear(120, 5)
-    dir(ll)
-    for i in ll.modules():
-        print(i)
 
     tok = tokenizer(["ahoj"])
     test_data = Dataset(tok)
