@@ -178,12 +178,12 @@ class ClassificationDataset:
 
 def get_source_datasets_ready_for_finetuning(
     datasets: List[pd.DataFrame],
-    drop_neutral=True,
-    preprocessor=Preprocessor(),
-    tokenizer=Tokenizer(),
-    batch_size=64,
-    shuffle=True,
-    num_workers=0,
+    drop_neutral,
+    preprocessor,
+    tokenizer,
+    batch_size,
+    shuffle,
+    num_workers,
 ):
     """
     Just wrapping many functions and methods that are common for preparing
