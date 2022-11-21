@@ -17,8 +17,8 @@ class Encoder(nn.Module):
             logger.info(f"Loading model parameters from {path_to_finetuned}.")
             self.encoder.load_state_dict(torch.load(path_to_finetuned))
 
-    def forward(self, x, mask=None):
-        outputs = self.encoder(x, attention_mask=mask)
+    def forward(self, input_ids, attention_mask=None, labels=None):
+        outputs = self.encoder(input_ids, attention_mask=attention_mask)
         sequence_output = outputs[0]
         features = sequence_output[:, 0, :]
         return features
