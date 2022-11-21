@@ -42,8 +42,6 @@ def get_finetuning_datasets(source_dataset: pd.DataFrame):
         test_size=0.2,
         random_state=RANDOM_STATE,
     )
-    #     source_train = pd.DataFrame({"text": source_train_X, "label": source_train_y})
-    #     source_val = pd.DataFrame({"text": source_val_X, "label": source_val_y})
     source_train = pd.concat([source_train_X, source_train_y], axis=1)
     source_val = pd.concat([source_val_X, source_val_y], axis=1)
     return source_train, source_val
@@ -200,30 +198,32 @@ def get_source_datasets_ready_for_finetuning(
     datasets = [get_finetuning_datasets(ds) for ds in datasets]
     train_datasets, val_datasets = list(zip(*datasets))
 
-    train_datasets = [
-        ClassificationDataset(ds.text, ds.label, ds.source) for ds in train_datasets
-    ]
-    val_datasets = [
-        ClassificationDataset(ds.text, ds.label, ds.source) for ds in val_datasets
-    ]
-
-    [ds.preprocess(preprocessor) for ds in train_datasets]
-    [ds.tokenize(tokenizer) for ds in train_datasets]
-    [ds.create_dataset() for ds in train_datasets]
-    [
-        ds.create_dataloader(
-            batch_size=batch_size, shuffle=shuffle, num_workers=num_workers
-        )
+    train_datasets = {
+        ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
         for ds in train_datasets
-    ]
+    }
+    val_datasets = {
+        ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
+        for ds in val_datasets
+    }
 
-    [ds.preprocess(preprocessor) for ds in val_datasets]
-    [ds.tokenize(tokenizer) for ds in val_datasets]
-    [ds.create_dataset() for ds in val_datasets]
+    [ds.preprocess(preprocessor) for ds in train_datasets.values()]
+    [ds.tokenize(tokenizer) for ds in train_datasets.values()]
+    [ds.create_dataset() for ds in train_datasets.values()]
     [
         ds.create_dataloader(
             batch_size=batch_size, shuffle=shuffle, num_workers=num_workers
         )
-        for ds in val_datasets
+        for ds in train_datasets.values()
+    ]
+
+    [ds.preprocess(preprocessor) for ds in val_datasets.values()]
+    [ds.tokenize(tokenizer) for ds in val_datasets.values()]
+    [ds.create_dataset() for ds in val_datasets.values()]
+    [
+        ds.create_dataloader(
+            batch_size=batch_size, shuffle=shuffle, num_workers=num_workers
+        )
+        for ds in val_datasets.values()
     ]
     return train_datasets, val_datasets

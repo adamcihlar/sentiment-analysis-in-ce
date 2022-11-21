@@ -5,8 +5,8 @@ from loguru import logger
 
 from sklearn.model_selection import train_test_split
 import torch
-from torch.optim import AdamW
-from transformers import get_scheduler
+from torch.optim import AdamW, Optimizer
+from transformers import get_linear_schedule_with_warmup
 from torch.utils.data import DataLoader
 from transformers import RobertaTokenizer, RobertaForSequenceClassification
 from datasets import load_metric
@@ -17,10 +17,10 @@ from src.model.tokenizers import Tokenizer
 from src.utils.text_preprocessing import Preprocessor
 
 
-source_mall = read_mall()
+
+source_mall = read_mall().sample(5000)
 source_facebook = read_facebook()
-source_csfd = read_csfd()
-datasets = [source_mall, source_facebook, source_csfd]
+datasets = [source_facebook, source_mall]
 
 train_datasets, val_datasets = get_source_datasets_ready_for_finetuning(
     datasets,
@@ -31,32 +31,6 @@ train_datasets, val_datasets = get_source_datasets_ready_for_finetuning(
     shuffle=True,
     num_workers=0,
 )
-
-source_dataset = drop_undefined_classes(source_dataset)
-source_dataset = transform_labels_to_probs(source_dataset, drop_neutral=True)
-
-preprocessor = Preprocessor()
-tokenizer = Tokenizer()
-
-source_train_df, source_val_df = get_finetuning_datasets(source_dataset)
-
-source_train = ClassificationDataset(
-    X=source_train_df.text, y=source_train_df.label, source=source_train_df.source
-)
-source_train.preprocess(preprocessor)
-source_train.tokenize(tokenizer)
-source_train.create_dataset()
-source_train.create_dataloader(batch_size=1)
-
-next(iter(source_train.torch_dataloader))
-
-list(source_train.source)[0]
-
-source_val = ClassificationDataset(X=source_val_df.text, y=source_val_df.label)
-source_val.preprocess(preprocessor)
-source_val.tokenize(tokenizer)
-source_val.create_dataset()
-source_val.create_dataloader()
 
 
 # load model
@@ -90,16 +64,21 @@ model = RobertaForSequenceClassification.from_pretrained(
 # How to Fine-Tune BERT for Text Classification?
 # 1. Take the last layer as embeddings
 # 2. If sequence is longer than 512 tokens, take first 128 and last 382 - would be
+# 3. batch size 24
+# 4. dropout 0.1
+# 5. Adam optimizer (I will use AdamW as it should generalize better) with
+# b1=0.9 and b2=0.999
+# learning rate = 2e-5
+# 4 epochs
 
 
 # specify training details
-optimizer = AdamW(model.parameters(), lr=3e-5)
-num_epochs = 1
+optimizer = AdamW(model.parameters(), lr=2e-5, betas(0.9, 0.999))
+num_epochs = 4
 num_training_steps = num_epochs * len(train_dataloader)
-scheduler = get_scheduler(
-    name="linear",
+scheduler = get_linear_schedule_with_warmup(
     optimizer=optimizer,
-    num_warmup_steps=num_training_steps * 0.15,
+    num_warmup_steps=num_training_steps * 0.1,
     num_training_steps=num_training_steps,
 )
 
