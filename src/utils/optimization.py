@@ -1,0 +1,25 @@
+from typing import List
+
+
+def layer_wise_learning_rate(
+    chronological_list_of_layers: List, lr_decay=0.95, n_layers_following=1
+):
+    """
+    Returns list of dictionaries containing parameters group (layer) and its
+    learning rate.
+    It expects that the final model has n_layers_following on top of these layers.
+    """
+    reversed_layers_iter = enumerate(reversed(chronological_list_of_layers))
+    optimizer_params_list = list(
+        reversed(
+            [
+                {
+                    "params": l.parameters(),
+                    "lr": optimizer_params["lr"]
+                    * (lr_decay ** (i + n_layers_following)),
+                }
+                for i, l in reversed_layers_iter
+            ]
+        )
+    )
+    return optimizer_params_list
