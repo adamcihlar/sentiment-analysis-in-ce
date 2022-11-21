@@ -27,7 +27,7 @@ train_datasets, val_datasets = get_source_datasets_ready_for_finetuning(
     drop_neutral=True,
     preprocessor=Preprocessor(),
     tokenizer=Tokenizer(),
-    batch_size=64,
+    batch_size=2,
     shuffle=True,
     num_workers=0,
 )
