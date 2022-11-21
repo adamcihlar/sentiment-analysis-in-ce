@@ -2,7 +2,7 @@ from typing import List
 
 
 def layer_wise_learning_rate(
-    chronological_list_of_layers: List, lr_decay=0.95, n_layers_following=1
+    chronological_list_of_layers: List, base_lr, lr_decay=0.95, n_layers_following=1
 ):
     """
     Returns list of dictionaries containing parameters group (layer) and its
@@ -15,8 +15,7 @@ def layer_wise_learning_rate(
             [
                 {
                     "params": l.parameters(),
-                    "lr": optimizer_params["lr"]
-                    * (lr_decay ** (i + n_layers_following)),
+                    "lr": base_lr * (lr_decay ** (i + n_layers_following)),
                 }
                 for i, l in reversed_layers_iter
             ]
