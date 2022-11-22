@@ -123,7 +123,7 @@ class AdaptiveSentimentClassifier:
 
         # get one classfication head per dataset and shared encoder for all datasets
         classifiers = {ds_name: self.classifier() for ds_name in train_datasets}
-        encoder = source_encoder
+        encoder = self.source_encoder
 
         # get optimizer for each classfication head and the shared encoder
         cls_optimizers = {

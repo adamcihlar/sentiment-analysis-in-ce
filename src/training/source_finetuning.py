@@ -43,15 +43,6 @@ asc.finetune(
     metrics=["f1", "accuracy", "precision", "recall"],
 )
 
-        train_datasets: Dict,
-        val_datasets: Dict,
-        optimizer: Type[torch.optim.Optimizer],
-        optimizer_params: Dict,
-        lr_params: Dict,
-        lr_scheduler_call: Callable,
-        warmup_steps_proportion: float,
-        num_epochs: int,
-        metrics: List,
 
 ### training details from the RobeCzech paper
 
