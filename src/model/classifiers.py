@@ -318,6 +318,7 @@ class AdaptiveSentimentClassifier:
         info_save_path = os.path.join(
             paths.OUTPUT_INFO_FINETUNNING, "_".join([self.name, start_time])
         )
+        os.makedirs(os.path.split(info_save_path)[0], exist_ok=True)
         with open(info_save_path, "w+") as fp:
             json.dump(val_metrics_progress, fp)
         pass
