@@ -531,7 +531,7 @@ if __name__ == "__main__":
         val_metrics_progress[ds_name]["train_loss"] = train_loss_mean_progress[ds_name]
 
     info_save_path = os.path.join(
-        OUTPUT_INFO_FINETUNNING, "_".join(asc.name, start_time)
+        OUTPUT_INFO_FINETUNNING, "_".join([asc.name, start_time])
     )
     with open(info_save_path, "w") as fp:
         json.dump(val_metrics_progress, fp)
