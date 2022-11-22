@@ -1,12 +1,12 @@
 from loguru import logger
 from django.utils.text import slugify
 from transformers import RobertaModel
-from torch import nn
+import torch
 
 from src.config.parameters import ENCODER_MODEL
 
 
-class Encoder(nn.Module):
+class Encoder(torch.nn.Module):
     """
     Easy initialization of the correct encoder.
     Simplification of the forward method to output only the embeddings.
@@ -18,7 +18,7 @@ class Encoder(nn.Module):
         self.name = slugify(model_name)
         if path_to_finetuned is not None:
             logger.info(f"Loading model parameters from {path_to_finetuned}.")
-            self.encoder.load_state_dict(torch.load(path_to_finetuned))
+            self.load_state_dict(torch.load(path_to_finetuned))
 
     def forward(self, input_ids, attention_mask=None, labels=None):
         outputs = self.encoder(input_ids, attention_mask=attention_mask)
