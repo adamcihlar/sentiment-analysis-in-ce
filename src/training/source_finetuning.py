@@ -6,11 +6,15 @@ from src.utils.datasets import get_source_datasets_ready_for_finetuning
 from src.utils.text_preprocessing import Preprocessor
 from src.model.tokenizers import Tokenizer
 from src.model.encoders import Encoder
-from src.model.classifiers import AdaptiveSentimentClassifier, ClassificationHead
+from src.model.classifiers import (
+    AdaptiveSentimentClassifier,
+    ClassificationHead,
+    Discriminator,
+)
 
 
-source_mall = read_mall().sample(7)
-source_facebook = read_facebook().sample(6)
+source_mall = read_mall().sample(12)
+source_facebook = read_facebook().sample(13)
 datasets = [source_facebook, source_mall]
 
 train_datasets, val_datasets = get_source_datasets_ready_for_finetuning(
@@ -18,7 +22,7 @@ train_datasets, val_datasets = get_source_datasets_ready_for_finetuning(
     drop_neutral=True,
     preprocessor=Preprocessor(),
     tokenizer=Tokenizer(),
-    batch_size=2,
+    batch_size=4,
     shuffle=True,
     num_workers=0,
 )
@@ -28,17 +32,26 @@ asc = AdaptiveSentimentClassifier(
 )
 
 asc.finetune(
-    train_datasets,
-    val_datasets,
+    train_datasets=train_datasets,
+    val_datasets=val_datasets,
     optimizer=AdamW,
     optimizer_params={"lr": 2e-5, "betas": (0.9, 0.999)},
     lr_params={"lr_decay": 0.95, "n_layers_following": 1},
-    warmup_steps_proportion=0.1,
     lr_scheduler_call=get_linear_schedule_with_warmup,
+    warmup_steps_proportion=0.1,
     num_epochs=4,
     metrics=["f1", "accuracy", "precision", "recall"],
 )
 
+        train_datasets: Dict,
+        val_datasets: Dict,
+        optimizer: Type[torch.optim.Optimizer],
+        optimizer_params: Dict,
+        lr_params: Dict,
+        lr_scheduler_call: Callable,
+        warmup_steps_proportion: float,
+        num_epochs: int,
+        metrics: List,
 
 ### training details from the RobeCzech paper
 

@@ -107,6 +107,7 @@ class AdaptiveSentimentClassifier:
         self.name = self.source_encoder.name
 
     def finetune(
+        self,
         train_datasets: Dict,
         val_datasets: Dict,
         optimizer: Type[torch.optim.Optimizer],
