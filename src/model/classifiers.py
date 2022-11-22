@@ -6,13 +6,13 @@ import time
 import os
 import json
 from tqdm import tqdm
+from loguru import logger
 
 import numpy as np
 import torch
 from transformers import (
     RobertaTokenizer,
     RobertaModel,
-    RobertaForSequenceClassification,
 )
 from torch.utils.data import DataLoader
 from evaluate import load
@@ -56,7 +56,8 @@ class ClassificationHead(torch.nn.Module):
                 torch.nn.Sigmoid(),
             )
         if path_to_finetuned is not None:
-            self.model.load_state_dict(torch.load(path_to_finetuned))
+            logger.info(f"Loading model parameters from {path_to_finetuned}.")
+            self.load_state_dict(torch.load(path_to_finetuned))
 
     def forward(self, inputs):
         outputs = self.model(inputs)
@@ -356,16 +357,165 @@ class AdaptiveSentimentClassifier:
         source_train_dataset,
         source_val_dataset,
         target_dataset,
-        source_encoder_path,
-        source_classifier_path,
         # optimizers
         # learning rates
         # lr_schedules
-        temperature,
-        loss_combination_params,
+        temperature,  # for knowledge distilation
+        loss_combination_params,  # tuple with alpha and beta
         metrics,
     ):
-        pass
+        source_train_dataset
+        source_val_dataset
+        target_dataset
+
+        optimizer = AdamW
+
+        source_encoder = asc.source_encoder
+        target_encoder = asc.target_encoder
+        classifier = asc.classifier(
+            path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL
+        )
+        discriminator = asc.discriminator
+
+        # set correct states for model parts
+        source_encoder.eval()
+        classifier.eval()
+        tgt_encoder.train()
+        discriminator.train()
+
+        # setup criterion and optimizer
+        bce_loss = torch.nn.BCELoss()
+        kldiv_loss = torch.nn.KLDivLoss(reduction="batchmean")
+
+        # TODO continue here with the adaptation method
+        # decide how to pass the training details:
+        # optimizer
+        # learning rates
+        # lr schedules
+        # how to pass the same train and val source dataset?
+        # basically how the finetune and adapt methods will be connected
+
+        # this updates only the weights of the target encoder
+        encoder_optimizer = optim.Adam(
+            tgt_encoder.parameters(), lr=param.d_learning_rate
+        )
+        # this updates only the weights of the discriminator
+        discriminator_optimizer = optim.Adam(
+            discriminator.parameters(), lr=param.d_learning_rate
+        )
+        len_data_loader = min(len(src_data_loader), len(tgt_data_train_loader))
+
+        for epoch in range(args.num_epochs):
+            # zip source and target data pair
+            data_zip = enumerate(zip(src_data_loader, tgt_data_train_loader))
+            for step, (
+                (reviews_src, src_mask, _),
+                (reviews_tgt, tgt_mask, _),
+            ) in data_zip:
+
+                # for every step take samples from both domains
+                reviews_src = make_cuda(reviews_src)
+                src_mask = make_cuda(src_mask)
+                reviews_tgt = make_cuda(reviews_tgt)
+                tgt_mask = make_cuda(tgt_mask)
+
+                # zero gradients for optimizer
+                optimizer_D.zero_grad()
+
+                # encoding of source sample by both encoders and target sample by
+                # target encoder
+                with torch.no_grad():
+                    feat_src = src_encoder(reviews_src, src_mask)
+                feat_src_tgt = tgt_encoder(reviews_src, src_mask)
+                feat_tgt = tgt_encoder(reviews_tgt, tgt_mask)
+
+                # feat_src = torch.zeros(1, 2, 768)
+                # feat_src_tgt = torch.ones(1, 2, 768)
+                # feat_tgt = torch.ones(1, 2, 768) + 1
+
+                # concatenate source and target domain batches(!) encoded by
+                # target (sic!) encoder
+                # this is probably mistake in this implementation, because the
+                # discriminator should see the source domain encoded by the source
+                # encoder so that the target encoder can be getting as close as
+                # possible to these "ground truth" source-source encodings
+                # this is for the task for discriminator - it will try to
+                # distinguish between source and target domains encoded by the same
+                # (target (sic!)) encoder
+                feat_concat = torch.cat((feat_src_tgt, feat_tgt), 0)
+
+                # predict on discriminator
+                pred_concat = discriminator(feat_concat.detach())
+
+                # prepare real and fake label
+                # why real and fake? So source domain = 1 and target domain = 0
+                # this is what we show to the discriminator and it really corresponds to
+                # the input domain.
+                # However, while training the target encoder we optimize it to
+                # encode target domain in such way, that it is classified by the
+                # discriminator as source domain (=> "encoder learns to trick the
+                # discriminator") - in that moment the labels are "fake" because
+                # the sample comes from the target domain but we give it the label
+                # of source domain
+                label_src = make_cuda(torch.ones(feat_src_tgt.size(0))).unsqueeze(1)
+                label_tgt = make_cuda(torch.zeros(feat_tgt.size(0))).unsqueeze(1)
+                label_concat = torch.cat((label_src, label_tgt), 0)
+
+                # compute loss for discriminator - standard binary classification loss
+                dis_loss = BCELoss(pred_concat, label_concat)
+                dis_loss.backward()
+
+                # this sets all params of the discriminator to (by default) range [-0.01, 0.01]
+                # I am not sure if I noticed this in the paper
+                # yes, this is to make the training more stable
+                for p in discriminator.parameters():
+                    p.data.clamp_(-args.clip_value, args.clip_value)
+                # optimize discriminator - updates only the discriminator's weights
+                optimizer_D.step()
+
+                # this is something I don't really undestand - there is only one
+                # output neuron with sigmoid activation (typical binary
+                # classification settings)
+                # so the argmax below always returns only zeros as the shape of
+                # pred_concat is always (batch_size, 1) so the max element has
+                # always index 0
+                # but it doesn't affect the optimization, it is just info about the
+                # training
+                pred_cls = torch.squeeze(pred_concat.max(1)[1])
+                acc = (pred_cls == label_concat).float().mean()
+
+                # zero gradients for target encoder optimizer
+                optimizer_G.zero_grad()
+                T = args.temperature
+
+                # predict on discriminator
+                # predict the domain of target domain encoded by the target encoder
+                pred_tgt = discriminator(feat_tgt)
+                # we want the target encoder to encode its target domain samples
+                # like if it was a source domain sample - map it to the same space
+                # that is why the loss is computed with respect to the source
+                # domain label even though we encoded target domain sample
+                gen_loss = BCELoss(pred_tgt, label_src)
+
+                # logits for KL-divergence
+                # classify the source encoded by both source and target encoder and
+                # distill the knowledge from source encoder to target encoder
+                # this is why it's once log(prob) and once just probability -
+                # https://stackoverflow.com/questions/62806681/pytorch-kldivloss-loss-is-negative
+                with torch.no_grad():
+                    src_prob = F.softmax(src_classifier(feat_src) / T, dim=-1)
+                tgt_prob = F.log_softmax(src_classifier(feat_src_tgt) / T, dim=-1)
+                kd_loss = KLDivLoss(tgt_prob, src_prob.detach()) * T * T
+
+                # compute the combined loss for target encoder
+                loss_tgt = args.alpha * gen_loss + args.beta * kd_loss
+                loss_tgt.backward()
+                torch.nn.utils.clip_grad_norm_(
+                    tgt_encoder.parameters(), args.max_grad_norm
+                )
+                torch.nn.utils.clip_grad_norm_(tgt_encoder.parameters(), 1)
+                # optimize target encoder
+                optimizer_G.step()
 
 
 if __name__ == "__main__":
