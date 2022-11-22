@@ -33,7 +33,7 @@ OUTPUT_PREDICTIONS = os.path.join(OUTPUT, "predictions")
 OUTPUT_MODELS = os.path.join(OUTPUT, "models")
 
 # FINETUNED
-OUTPUT_MODELS_FINETUNED = os.path.join(OUTPUT_MODELS, "finetunned")
+OUTPUT_MODELS_FINETUNED = os.path.join(OUTPUT_MODELS, "finetuned")
 OUTPUT_MODELS_FINETUNED_ENCODER = os.path.join(OUTPUT_MODELS_FINETUNED, "encoder")
 OUTPUT_MODELS_FINETUNED_CLASSIFIER = os.path.join(
     OUTPUT_MODELS_FINETUNED, "classification_head"
@@ -56,6 +56,6 @@ OUTPUT_MODELS_ADAPTED_DISCRIMINATOR = os.path.join(
 OUTPUT_INFO = os.path.join(OUTPUT, "train_info")
 
 # FINETUNING
-OUTPUT_INFO_FINETUNING = os.path.join(OUTPUT_INFO, "finetunning")
+OUTPUT_INFO_FINETUNING = os.path.join(OUTPUT_INFO, "finetuning")
 # ADAPTATION
 OUTPUT_INFO_ADAPTATION = os.path.join(OUTPUT_INFO, "adaptation")
