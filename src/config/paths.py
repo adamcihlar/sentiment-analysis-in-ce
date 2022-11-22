@@ -36,7 +36,7 @@ OUTPUT_MODELS = os.path.join(OUTPUT, "models")
 OUTPUT_MODELS_FINETUNNED = os.path.join(OUTPUT_MODELS, "finetunned")
 OUTPUT_MODELS_FINETUNNED_ENCODER = os.path.join(OUTPUT_MODELS_FINETUNNED, "encoder")
 OUTPUT_MODELS_FINETUNNED_CLASSIFIER = os.path.join(
-    OUTPUT_MODELS_FINETUNNED, "clasclassfication_head"
+    OUTPUT_MODELS_FINETUNNED, "classification_head"
 )
 
 # ADAPTED
