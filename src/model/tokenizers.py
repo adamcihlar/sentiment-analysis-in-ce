@@ -1,8 +1,7 @@
 from transformers import AutoTokenizer
-from src.config.parameters import TOKENIZER_MODEL
 from typing import List, Tuple
 
-from datetime import datetime
+from src.config.parameters import TOKENIZER_MODEL
 
 
 class Tokenizer:
