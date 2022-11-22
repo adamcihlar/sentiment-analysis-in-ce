@@ -7,8 +7,8 @@ target_dataset = read_csfd().sample(10)
 asc = AdaptiveSentimentClassifier(
     Preprocessor(),
     Tokenizer(),
-    Encoder(),
+    Encoder(path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_ENCODER_FINAL),
     ClassificationHead,
     Discriminator(),
-    Encoder(),
+    Encoder(path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_ENCODER_FINAL),
 )
