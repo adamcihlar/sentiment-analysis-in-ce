@@ -43,7 +43,6 @@ asc.finetune(
     metrics=["f1", "accuracy", "precision", "recall"],
 )
 
-
 ### training details from the RobeCzech paper
 
 # Data:

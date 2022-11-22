@@ -130,10 +130,10 @@ class AdaptiveSentimentClassifier:
             cls_name: optimizer(classifiers[cls_name].parameters(), **optimizer_params)
             for cls_name in classifiers
         }
-        if layer_wise_lr_decay is None or layer_wise_lr_decay == 1:
+        if lr_params.get("lr_decay") is None or lr_params.get("lr_decay") == 1:
             encoder_optimizer = optimizer(encoder.parameters(), **optimizer_params)
         else:
-            list_of_layers = source_encoder.encoder.encoder.layer
+            list_of_layers = encoder.encoder.encoder.layer
             optimizer_params_list = layer_wise_learning_rate(
                 list_of_layers, optimizer_params["lr"], **lr_params
             )
