@@ -316,7 +316,7 @@ class AdaptiveSentimentClassifier:
                 ds_name
             ]
         info_save_path = os.path.join(
-            paths.OUTPUT_INFO_FINETUNNING, "_".join(self.name, start_time)
+            paths.OUTPUT_INFO_FINETUNNING, "_".join([self.name, start_time])
         )
         with open(info_save_path, "w") as fp:
             json.dump(val_metrics_progress, fp)
