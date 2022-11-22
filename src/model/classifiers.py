@@ -97,7 +97,7 @@ class AdaptiveSentimentClassifier:
         source_encoder,
         classifier: Type[ClassificationHead],
         discriminator,
-        target_encoder=None,
+        target_encoder,
     ):
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
@@ -119,6 +119,24 @@ class AdaptiveSentimentClassifier:
         num_epochs: int,
         metrics: List,
     ):
+        """
+        Implements multitask finetuning on provided train_datasets.
+        Hyperparameters taken from paper: How to Fine-Tune BERT for Text Classification?
+        1. Take the last layer as embeddings
+        2. If sequence is longer than 512 tokens, take first 128 and last 382 - would be
+        3. batch size 24
+        4. dropout 0.1
+        5. Adam optimizer (I will use AdamW as it should generalize better) with
+        b1=0.9 and b2=0.999
+        learning rate = 2e-5
+        6. layer wise learning rate decay
+        7. 4 epochs
+
+        Saves:
+            all the trained models every epoch - one classifier per dataset and
+            one shared encoder
+            training info - train_loss, val_loss, val_metrics
+        """
         # save start time of the training
         start_time = time.strftime("%Y%m%d-%H%M%S")
 
@@ -287,7 +305,7 @@ class AdaptiveSentimentClassifier:
             # save all models from the epoch
             # encoder
             save_path = os.path.join(
-                paths.OUTPUT_MODELS_FINETUNNED_ENCODER,
+                paths.OUTPUT_MODELS_FINETUNED_ENCODER,
                 "_".join([self.name, start_time, str(epoch)]),
             )
             os.makedirs(os.path.split(save_path)[0], exist_ok=True)
@@ -296,7 +314,7 @@ class AdaptiveSentimentClassifier:
             # classifiers
             cls_save_paths = [
                 os.path.join(
-                    paths.OUTPUT_MODELS_FINETUNNED_CLASSIFIER,
+                    paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER,
                     "_".join([self.name, start_time, cls, str(epoch)]),
                 )
                 for cls in classifiers
@@ -310,17 +328,43 @@ class AdaptiveSentimentClassifier:
                 for cls_name, path in zip(classifiers, cls_save_paths)
             ]
 
+        # save the training info
         for ds_name in val_datasets:
             val_metrics_progress[ds_name]["val_loss"] = val_loss_mean_progress[ds_name]
             val_metrics_progress[ds_name]["train_loss"] = train_loss_mean_progress[
                 ds_name
             ]
         info_save_path = os.path.join(
-            paths.OUTPUT_INFO_FINETUNNING, "_".join([self.name, start_time]) + ".json"
+            paths.OUTPUT_INFO_FINETUNING,
+            "_".join([self.name, "val", start_time]) + ".json",
         )
         os.makedirs(os.path.split(info_save_path)[0], exist_ok=True)
         with open(info_save_path, "w+") as fp:
             json.dump(val_metrics_progress, fp)
+
+        info_save_path = os.path.join(
+            paths.OUTPUT_INFO_FINETUNING,
+            "_".join([self.name, "train", start_time]) + ".json",
+        )
+        os.makedirs(os.path.split(info_save_path)[0], exist_ok=True)
+        with open(info_save_path, "w+") as fp:
+            json.dump(train_loss_batch_progress, fp)
+        pass
+
+    def adapt(
+        self,
+        source_train_dataset,
+        source_val_dataset,
+        target_dataset,
+        source_encoder_path,
+        source_classifier_path,
+        # optimizers
+        # learning rates
+        # lr_schedules
+        temperature,
+        loss_combination_params,
+        metrics,
+    ):
         pass
 
 
