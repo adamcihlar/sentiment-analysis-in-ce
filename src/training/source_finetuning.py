@@ -18,8 +18,8 @@ from src.utils.text_preprocessing import Preprocessor
 
 
 
-source_mall = read_mall().sample(5000)
-source_facebook = read_facebook()
+source_mall = read_mall().sample(7)
+source_facebook = read_facebook().sample(6)
 datasets = [source_facebook, source_mall]
 
 train_datasets, val_datasets = get_source_datasets_ready_for_finetuning(
