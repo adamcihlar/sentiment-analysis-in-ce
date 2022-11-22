@@ -111,7 +111,7 @@ class AdaptiveSentimentClassifier:
         val_datasets: Dict,
         optimizer: Type[torch.optim.Optimizer],
         optimizer_params: Dict,
-        lr_params: Dict
+        lr_params: Dict,
         lr_scheduler_call: Callable,
         warmup_steps_proportion: float,
         num_epochs: int,
@@ -133,7 +133,9 @@ class AdaptiveSentimentClassifier:
             encoder_optimizer = optimizer(encoder.parameters(), **optimizer_params)
         else:
             list_of_layers = source_encoder.encoder.encoder.layer
-            optimizer_params_list = layer_wise_learning_rate(list_of_layers, optimizer_params["lr"], **lr_params)
+            optimizer_params_list = layer_wise_learning_rate(
+                list_of_layers, optimizer_params["lr"], **lr_params
+            )
             encoder_optimizer = optimizer(optimizer_params_list, **optimizer_params)
 
         # compute the total num of training steps to init lr_scheduler

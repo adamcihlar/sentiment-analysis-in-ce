@@ -1,20 +1,12 @@
-from tqdm import tqdm
-import pandas as pd
-import numpy as np
-from loguru import logger
-
-from sklearn.model_selection import train_test_split
-import torch
-from torch.optim import AdamW, Optimizer
+from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
-from torch.utils.data import DataLoader
-from transformers import RobertaTokenizer, RobertaForSequenceClassification
-from datasets import load_metric
 
 from src.reading.readers import read_facebook, read_mall, read_csfd
 from src.utils.datasets import get_source_datasets_ready_for_finetuning
-from src.model.tokenizers import Tokenizer
 from src.utils.text_preprocessing import Preprocessor
+from src.model.tokenizers import Tokenizer
+from src.model.encoders import Encoder
+from src.model.classifiers import AdaptiveSentimentClassifier, ClassificationHead
 
 
 source_mall = read_mall().sample(7)
