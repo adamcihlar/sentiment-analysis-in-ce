@@ -1,8 +1,12 @@
 from typing import List, Type, Callable, Dict
 import itertools
-import numpy as np
 import random
 import math
+import time
+import os
+import json
+
+import numpy as np
 import torch
 from transformers import (
     RobertaTokenizer,
@@ -17,6 +21,7 @@ from src.utils.optimization import layer_wise_learning_rate
 from src.model.encoders import Encoder
 from src.utils.text_preprocessing import Preprocessor
 from src.model.tokenizers import Tokenizer
+from src.config import paths
 
 
 class ClassificationHead(torch.nn.Module):
@@ -99,6 +104,7 @@ class AdaptiveSentimentClassifier:
         self.classifier = classifier
         self.target_encoder = target_encoder
         self.discriminator = discriminator
+        self.name = self.source_encoder.name
 
     def finetune(
         train_datasets: Dict,
@@ -126,10 +132,13 @@ if __name__ == "__main__":
     layer_wise_lr_decay = 0.95
     n_layers_following = 1  # n layers of the classifier
     warmup_steps_proportion = 0.1
-    num_epochs = 4
+    num_epochs = 1
     metrics = ["f1", "accuracy", "precision", "recall"]
 
     # method body
+    # save start time of the training
+    start_time = time.strftime("%Y%m%d-%H%M%S")
+
     # get one classfication head per dataset and shared encoder for all datasets
     classifiers = {ds_name: asc.classifier() for ds_name in train_datasets}
     encoder = source_encoder
@@ -197,8 +206,11 @@ if __name__ == "__main__":
     # define training loss
     bce_loss = torch.nn.BCELoss()
 
+    # training loop
     for epoch in range(num_epochs):
 
+        # reshuffle the sampling schedule
+        random.shuffle(samples_schedule)
         encoder.train()
         [classifiers[cls_name].train() for cls_name in classifiers]
         loss_progress = []
@@ -233,8 +245,8 @@ if __name__ == "__main__":
             encoder_optimizer.zero_grad()
             progress_bar.update(1)
 
-            loss_progress.append(loss.item())
-            train_epoch_loss_progress[ds_name].append(loss.item())
+            loss_progress.append(cls_loss.item())
+            train_epoch_loss_progress[source_ds].append(cls_loss.item())
             if counter % display_loss_after_iters == 0:
                 mean_loss = np.mean(np.array(loss_progress))
                 print("Training loss:", mean_loss)
@@ -275,7 +287,9 @@ if __name__ == "__main__":
             train_loss_mean_progress[ds_name].append(
                 np.mean(np.array(train_epoch_loss_progress[ds_name]))
             )
-            train_loss_batch_progress[ds_name].append(train_epoch_loss_progress)
+            train_loss_batch_progress[ds_name].append(
+                train_epoch_loss_progress[ds_name]
+            )
         train_epoch_loss_progress = {ds_name: [] for ds_name in train_datasets}
         for ds_name in val_datasets:
             val_loss_mean_progress[ds_name].append(
@@ -284,15 +298,20 @@ if __name__ == "__main__":
         val_epoch_loss_progress = {ds_name: [] for ds_name in val_datasets}
 
         # save all models from the epoch
-        save_path = "output/models/finetunned/encoder/robeczech_" + str(epoch)
+        # encoder
+        save_path = os.path.join(
+            paths.OUTPUT_MODELS_FINETUNNED_ENCODER,
+            "_".join([asc.name, start_time, str(epoch)]),
+        )
         os.makedirs(os.path.split(save_path)[0], exist_ok=True)
         torch.save(encoder.state_dict(), save_path)
 
+        # classifiers
         cls_save_paths = [
-            "output/models/finetunned/classfication_heads/robeczech_"
-            + cls
-            + "_"
-            + str(epoch)
+            os.path.join(
+                paths.OUTPUT_MODELS_FINETUNNED_CLASSIFIER,
+                "_".join([asc.name, start_time, cls, str(epoch)]),
+            )
             for cls in classifiers
         ]
         [os.makedirs(os.path.split(path)[0], exist_ok=True) for path in cls_save_paths]
@@ -300,3 +319,13 @@ if __name__ == "__main__":
             torch.save(classifiers[cls_name].state_dict(), path)
             for cls_name, path in zip(classifiers, cls_save_paths)
         ]
+
+    for ds_name in val_datasets:
+        val_metrics_progress[ds_name]["val_loss"] = val_loss_mean_progress[ds_name]
+        val_metrics_progress[ds_name]["train_loss"] = train_loss_mean_progress[ds_name]
+
+    info_save_path = os.path.join(
+        OUTPUT_INFO_FINETUNNING, "_".join(asc.name, start_time)
+    )
+    with open(info_save_path, "w") as fp:
+        json.dump(val_metrics_progress, fp)
