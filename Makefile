@@ -48,6 +48,10 @@ docker_run_dev:
 docker_connect:
 	docker exec -it "$$(docker ps -q)" /bin/bash
 
+clean_finetuning:
+	rm -r -i output/models/finetuned
+	rm -r -i output/train_info/finetuning
+
 # run solution
 run_api: docker_build_api
 	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_api /bin/bash
