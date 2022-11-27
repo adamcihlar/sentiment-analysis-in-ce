@@ -1,3 +1,7 @@
 RANDOM_STATE = 42
 TOKENIZER_MODEL = "ufal/robeczech-base"
 ENCODER_MODEL = "ufal/robeczech-base"
+
+FINETUNED_CHECKPOINT = ""
+FINETUNED_EPOCH = 3
+FINETUNED_DATASET = "mall"
