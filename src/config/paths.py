@@ -23,6 +23,9 @@ DATA_PROCESSED_MALL = os.path.join(DATA_PROCESSED, "mall.csv")
 
 DATA_PROCESSED_CONCAT = os.path.join(DATA_PROCESSED, "concat_dataset.csv")
 
+# FINAL
+DATA_FINAL = os.path.join(DATA, "final")
+
 # OUTPUT
 OUTPUT = "output"
 
