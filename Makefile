@@ -49,8 +49,8 @@ docker_connect:
 	docker exec -it "$$(docker ps -q)" /bin/bash
 
 clean_finetuning:
-	rm -r -i output/models/finetuned
-	rm -r -i output/train_info/finetuning
+	sudo rm -r -i output/models/finetuned
+	sudo rm -r -i output/train_info/finetuning
 
 # run solution
 run_api: docker_build_api
