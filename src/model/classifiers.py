@@ -458,7 +458,7 @@ class AdaptiveSentimentClassifier:
 
         optimizer = AdamW
         optimizer_params = {"lr": 2e-5, "betas": (0.9, 0.999)}
-        lr_params = {"lr_decay": 0.95, "n_layers_following": 3}
+        lr_decay = 0.95
         lr_scheduler_call = get_linear_schedule_with_warmup
         warmup_steps_proportion = 0.1
         num_epochs = 4
@@ -481,18 +481,8 @@ class AdaptiveSentimentClassifier:
         bce_loss = torch.nn.BCELoss()
         kldiv_loss = torch.nn.KLDivLoss(reduction="batchmean")
 
-        # TODO continue here with the adaptation method
-        # decide how to pass the training details:
-        # optimizer
-        # learning rates
-        # lr schedules
-        # how to pass the same train and val source dataset?
-        # basically how the finetune and adapt methods will be connected
-
-        ##############################################################################
         # get optimizer for each classfication head and the shared encoder
-        encoder_optimizer
-        if lr_params.get("lr_decay") is None or lr_params.get("lr_decay") == 1:
+        if lr_decay is None or lr_decay == 1:
             encoder_optimizer = optimizer(encoder.parameters(), **optimizer_params)
             discriminator_optimizer = optimizer(
                 discriminator.parameters(), **optimizer_params
@@ -500,33 +490,33 @@ class AdaptiveSentimentClassifier:
         else:
             list_of_layers = target_encoder.encoder.encoder.layer
             optimizer_params_list = layer_wise_learning_rate(
-                list_of_layers, optimizer_params["lr"], **lr_params
+                list_of_layers,
+                optimizer_params["lr"],
+                lr_decay,
+                len(discriminator.model),
             )
             encoder_optimizer = optimizer(optimizer_params_list, **optimizer_params)
+            list_of_layers = list(discriminator.model)
+            optimizer_params_list = layer_wise_learning_rate(
+                list_of_layers,
+                optimizer_params["lr"],
+                lr_decay,
+                0,
+            )
+            discriminator_optimizer = optimizer(
+                optimizer_params_list, **optimizer_params
+            )
 
-            dir(discriminator.model)
-            next(iter(discriminator.model.modules()))
-            list(iter(list(iter(discriminator.model.children()))[0:2].parameters()))
-            dir(list(iter(discriminator.model.children()))[0])
-            list(list(iter(discriminator.model.children()))[0].parameters())
-            for i in discriminator.model:
-                print(type(i))
-            torch.nn.Module(list(iter(discriminator.model.children()))[0])
-            mod = torch.nn.Module()
-            dir(mod)
-            for i in classifier.model:
-                print(type(i))
-
-        # this updates only the weights of the target encoder
-        encoder_optimizer = optimizer(
-            target_encoder.parameters(), lr=param.d_learning_rate
-        )
-        # this updates only the weights of the discriminator
-        discriminator_optimizer = optim.Adam(
-            discriminator.parameters(), lr=param.d_learning_rate
-        )
-        len_data_loader = min(len(src_data_loader), len(tgt_data_train_loader))
         ##############################################################################
+
+        # TODO continue here with the adaptation method
+        # decide how to pass the training details:
+        # optimizer DONE
+        # learning rates DONE
+        # lr schedules
+        # how to pass the same train and val source dataset?
+        # basically how the finetune and adapt methods will be connected
+        len_data_loader = min(len(src_data_loader), len(tgt_data_train_loader))
 
         for epoch in range(args.num_epochs):
             # zip source and target data pair
