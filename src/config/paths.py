@@ -26,6 +26,9 @@ DATA_PROCESSED_CONCAT = os.path.join(DATA_PROCESSED, "concat_dataset.csv")
 # FINAL
 DATA_FINAL = os.path.join(DATA, "final")
 
+DATA_FINAL_SOURCE_TRAIN = os.path.join(DATA_FINAL, "source_train")
+DATA_FINAL_SOURCE_VAL = os.path.join(DATA_FINAL, "source_val")
+
 # OUTPUT
 OUTPUT = "output"
 
