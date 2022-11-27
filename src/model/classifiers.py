@@ -158,7 +158,7 @@ class AdaptiveSentimentClassifier:
         encoder = self.source_encoder
 
         # get optimizer for each classfication head and the shared encoder
-        if lr_params.get("lr_decay") is None or lr_params.get("lr_decay") == 1:
+        if lr_decay is None or lr_decay == 1:
             cls_optimizers = {
                 cls_name: optimizer(
                     classifiers[cls_name].parameters(), **optimizer_params
