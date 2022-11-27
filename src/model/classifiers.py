@@ -126,7 +126,7 @@ class AdaptiveSentimentClassifier:
         val_datasets: Dict,
         optimizer: Type[torch.optim.Optimizer],
         optimizer_params: Dict,
-        lr_params: Dict,
+        lr_decay: float,
         lr_scheduler_call: Callable,
         warmup_steps_proportion: float,
         num_epochs: int,
@@ -158,16 +158,37 @@ class AdaptiveSentimentClassifier:
         encoder = self.source_encoder
 
         # get optimizer for each classfication head and the shared encoder
-        cls_optimizers = {
-            cls_name: optimizer(classifiers[cls_name].parameters(), **optimizer_params)
-            for cls_name in classifiers
-        }
         if lr_params.get("lr_decay") is None or lr_params.get("lr_decay") == 1:
+            cls_optimizers = {
+                cls_name: optimizer(
+                    classifiers[cls_name].parameters(), **optimizer_params
+                )
+                for cls_name in classifiers
+            }
             encoder_optimizer = optimizer(encoder.parameters(), **optimizer_params)
         else:
-            list_of_layers = encoder.encoder.encoder.layer
+            cls_lists_of_layers = {
+                cls_name: list(classifiers[cls_name].model) for cls_name in classifiers
+            }
+            cls_optimizer_params_lists = {
+                cls_name: layer_wise_learning_rate(
+                    cls_lists_of_layers[cls_name], optimizer_params["lr"], lr_decay, 0
+                )
+                for cls_name in cls_lists_of_layers
+            }
+            cls_optimizers = {
+                cls_name: optimizer(
+                    cls_optimizer_params_lists[cls_name], **optimizer_params
+                )
+                for cls_name in classifiers
+            }
+
+            encoder_list_of_layers = encoder.encoder.encoder.layer
             optimizer_params_list = layer_wise_learning_rate(
-                list_of_layers, optimizer_params["lr"], **lr_params
+                encoder_list_of_layers,
+                optimizer_params["lr"],
+                lr_decay,
+                len(self.classifier().model),
             )
             encoder_optimizer = optimizer(optimizer_params_list, **optimizer_params)
 
