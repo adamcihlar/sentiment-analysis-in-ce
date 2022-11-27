@@ -17,7 +17,9 @@ class Encoder(torch.nn.Module):
         self.encoder = RobertaModel.from_pretrained(model_name)
         self.name = slugify(model_name)
         if path_to_finetuned is not None:
-            logger.info(f"Loading model parameters from {path_to_finetuned}.")
+            logger.info(
+                f"Loading model parameters for Encoder from {path_to_finetuned}."
+            )
             self.load_state_dict(torch.load(path_to_finetuned))
 
     def forward(self, input_ids, attention_mask=None, labels=None):

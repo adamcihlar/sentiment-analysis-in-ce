@@ -19,6 +19,7 @@ from evaluate import load
 
 from src.utils.datasets import Dataset
 from src.utils.optimization import layer_wise_learning_rate
+from src.utils.custom_layers import Linear
 from src.model.encoders import Encoder
 from src.utils.text_preprocessing import Preprocessor
 from src.model.tokenizers import Tokenizer
@@ -48,12 +49,11 @@ class ClassificationHead(torch.nn.Module):
             self.model = model
         else:
             self.model = torch.nn.Sequential(
-                # torch.nn.Dropout(dropout),
-                # torch.nn.Linear(input_size, hidden_size),
-                # torch.nn.ReLU(),
-                torch.nn.Dropout(dropout),
-                torch.nn.Linear(hidden_size, num_classes),
-                torch.nn.Sigmoid(),
+                torch.nn.Sequential(
+                    torch.nn.Dropout(dropout),
+                    torch.nn.Linear(hidden_size, num_classes),
+                    torch.nn.Sigmoid(),
+                )
             )
         if path_to_finetuned is not None:
             logger.info(f"Loading model parameters from {path_to_finetuned}.")
@@ -67,6 +67,9 @@ class ClassificationHead(torch.nn.Module):
 class Discriminator(torch.nn.Module):
     """
     Classifier trained to distinguish between source and target domain.
+    What sizes of the layers?:
+        Original ADDA paper says input, 1024, 2048, output
+        Distilation paper says input, 3072, 3072, output
     """
 
     def __init__(
@@ -77,12 +80,18 @@ class Discriminator(torch.nn.Module):
             self.model = model
         else:
             self.model = torch.nn.Sequential(
-                torch.nn.Linear(input_size, hidden_size),
-                torch.nn.ReLU(),
-                torch.nn.Linear(hidden_size, hidden_size),
-                torch.nn.ReLU(),
-                torch.nn.Linear(hidden_size, num_classes),
-                torch.nn.Sigmoid(),
+                torch.nn.Sequential(
+                    torch.nn.Linear(input_size, hidden_size),
+                    torch.nn.ReLU(),
+                ),
+                torch.nn.Sequential(
+                    torch.nn.Linear(hidden_size, hidden_size),
+                    torch.nn.ReLU(),
+                ),
+                torch.nn.Sequential(
+                    torch.nn.Linear(hidden_size, num_classes),
+                    torch.nn.Sigmoid(),
+                ),
             )
 
     def forward(self, inputs):
@@ -364,11 +373,68 @@ class AdaptiveSentimentClassifier:
         loss_combination_params,  # tuple with alpha and beta
         metrics,
     ):
+        """
+        Implements adversarial domain adaptation with distilation.
+        Hyperparameters:
+            How to finetune BERT?:
+                1. Take the last layer as embeddings
+                2. If sequence is longer than 512 tokens, take first 128 and last 382 - would be
+                3. batch size 24
+                4. dropout 0.1
+                5. Adam optimizer (I will use AdamW as it should generalize better) with
+                b1=0.9 and b2=0.999
+                6. learning rate = 2e-5
+                7. layer wise learning rate decay with 0.95
+                8. 4 epochs
+            Knowledge Distillation for BERT Unsupervised Domain Adaptation:
+                1. ?
+                2. ?
+                3. batch size 64
+                4. ?
+                5. Adam optimizer (I will use AdamW as it should generalize better) with
+                b1=0.9 and b2=0.999
+                6. learning rate = 1e-5
+                7. None
+                8. 3 epochs
+            My settings:
+                1. I have to go with the same as in finetuning since the
+                classifier is trained on that
+                2. Same as 1.
+                3. Considerable - but maybe rather 24
+                4. No reason to change it from finetuning - keep it 0.1
+                5. I should study the difference between Adam and AdamW but it
+                should be ok to use AdamW, if I know "why?"
+                6. that is the main question - I believe the lr for target
+                encoder should be really low as it is already finetuned and
+                "just" needs to adapt so 1e-5 seems reasonable, but the
+                discriminator is initialized randomly so it is classical
+                finetuning settings where 2e-5 would make sense
+                7. definitely - maybe apply bigger decay to solve the point 6
+                8. 4 epochs
+        Args:
+            source train and val datasets - must be the same as they were for
+            finetuning the selected classification head
+            target dataset w/o labels - no subsetting, take the full dataset
+            learning hyperparameters (optimizer, lr_schedules, temperature,
+            loss combination parameters)
+            metrics to track during the training
+        Saves:
+            the target encoder every epoch
+            save also the Distcriminator? why not
+            training info - train_loss, val_loss, val_metrics of the target
+            encoder on the source task
+        """
         source_train_dataset
         source_val_dataset
         target_dataset
 
         optimizer = AdamW
+        optimizer_params = {"lr": 2e-5, "betas": (0.9, 0.999)}
+        lr_params = {"lr_decay": 0.95, "n_layers_following": 3}
+        lr_scheduler_call = get_linear_schedule_with_warmup
+        warmup_steps_proportion = 0.1
+        num_epochs = 4
+        metrics = ["f1", "accuracy", "precision", "recall"]
 
         source_encoder = asc.source_encoder
         target_encoder = asc.target_encoder
@@ -380,7 +446,7 @@ class AdaptiveSentimentClassifier:
         # set correct states for model parts
         source_encoder.eval()
         classifier.eval()
-        tgt_encoder.train()
+        target_encoder.train()
         discriminator.train()
 
         # setup criterion and optimizer
@@ -395,15 +461,44 @@ class AdaptiveSentimentClassifier:
         # how to pass the same train and val source dataset?
         # basically how the finetune and adapt methods will be connected
 
+        ##############################################################################
+        # get optimizer for each classfication head and the shared encoder
+        encoder_optimizer
+        if lr_params.get("lr_decay") is None or lr_params.get("lr_decay") == 1:
+            encoder_optimizer = optimizer(encoder.parameters(), **optimizer_params)
+            discriminator_optimizer = optimizer(
+                discriminator.parameters(), **optimizer_params
+            )
+        else:
+            list_of_layers = target_encoder.encoder.encoder.layer
+            optimizer_params_list = layer_wise_learning_rate(
+                list_of_layers, optimizer_params["lr"], **lr_params
+            )
+            encoder_optimizer = optimizer(optimizer_params_list, **optimizer_params)
+
+            dir(discriminator.model)
+            next(iter(discriminator.model.modules()))
+            list(iter(list(iter(discriminator.model.children()))[0:2].parameters()))
+            dir(list(iter(discriminator.model.children()))[0])
+            list(list(iter(discriminator.model.children()))[0].parameters())
+            for i in discriminator.model:
+                print(type(i))
+            torch.nn.Module(list(iter(discriminator.model.children()))[0])
+            mod = torch.nn.Module()
+            dir(mod)
+            for i in classifier.model:
+                print(type(i))
+
         # this updates only the weights of the target encoder
-        encoder_optimizer = optim.Adam(
-            tgt_encoder.parameters(), lr=param.d_learning_rate
+        encoder_optimizer = optimizer(
+            target_encoder.parameters(), lr=param.d_learning_rate
         )
         # this updates only the weights of the discriminator
         discriminator_optimizer = optim.Adam(
             discriminator.parameters(), lr=param.d_learning_rate
         )
         len_data_loader = min(len(src_data_loader), len(tgt_data_train_loader))
+        ##############################################################################
 
         for epoch in range(args.num_epochs):
             # zip source and target data pair
