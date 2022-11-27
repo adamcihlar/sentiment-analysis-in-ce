@@ -387,6 +387,23 @@ class AdaptiveSentimentClassifier:
         os.makedirs(os.path.split(info_save_path)[0], exist_ok=True)
         with open(info_save_path, "w+") as fp:
             json.dump(train_loss_batch_progress, fp)
+
+        # save datasets as I will need them for adapt method
+        for ds_name in train_datasets:
+            save_path = os.path.join(
+                paths.DATA_FINAL_SOURCE_TRAIN,
+                "_".join([self.name, start_time, ds_name]) + ".csv",
+            )
+            os.makedirs(os.path.split(save_path)[0], exist_ok=True)
+            train_datasets[ds_name].save_data(save_path)
+        for ds_name in val_datasets:
+            save_path = os.path.join(
+                paths.DATA_FINAL_SOURCE_VAL,
+                "_".join([self.name, start_time, ds_name]) + ".csv",
+            )
+            os.makedirs(os.path.split(save_path)[0], exist_ok=True)
+            train_datasets[ds_name].save_data(save_path)
+
         pass
 
     def adapt(
@@ -458,7 +475,7 @@ class AdaptiveSentimentClassifier:
 
         optimizer = AdamW
         optimizer_params = {"lr": 2e-5, "betas": (0.9, 0.999)}
-        lr_decay = 0.95
+        lr_decay = 0.9
         lr_scheduler_call = get_linear_schedule_with_warmup
         warmup_steps_proportion = 0.1
         num_epochs = 4
