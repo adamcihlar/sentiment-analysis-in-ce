@@ -19,7 +19,8 @@ from evaluate import load
 
 from src.utils.datasets import Dataset
 from src.utils.optimization import layer_wise_learning_rate
-from src.utils.custom_layers import Linear
+
+# from src.utils.custom_layers import Linear
 from src.model.encoders import Encoder
 from src.utils.text_preprocessing import Preprocessor
 from src.model.tokenizers import Tokenizer
@@ -33,6 +34,7 @@ class ClassificationHead(torch.nn.Module):
     function.
     If this was numerically unstable try skipping the sigmoid activation
     function and use BCEWithLogitsLoss instead.
+    Layers wrapped to Sequential modules to enable iterating over them.
     """
 
     def __init__(
@@ -67,6 +69,7 @@ class ClassificationHead(torch.nn.Module):
 class Discriminator(torch.nn.Module):
     """
     Classifier trained to distinguish between source and target domain.
+    Layers wrapped to Sequential modules to enable iterating over them.
     What sizes of the layers?:
         Original ADDA paper says input, 1024, 2048, output
         Distilation paper says input, 3072, 3072, output
@@ -299,16 +302,20 @@ class AdaptiveSentimentClassifier:
 
             # compute average losses per epoch
             for ds_name in train_datasets:
-                train_loss_mean_progress[ds_name].append(
-                    np.mean(np.array(train_epoch_loss_progress[ds_name]))
-                )
+                epoch_train_loss = np.mean(np.array(train_epoch_loss_progress[ds_name]))
+                train_loss_mean_progress[ds_name].append(epoch_train_loss)
                 train_loss_batch_progress[ds_name].append(
                     train_epoch_loss_progress[ds_name]
                 )
+                print(
+                    f"Mean training loss for {ds_name} for epoch {epoch}: {epoch_train_loss}"
+                )
             train_epoch_loss_progress = {ds_name: [] for ds_name in train_datasets}
             for ds_name in val_datasets:
-                val_loss_mean_progress[ds_name].append(
-                    np.mean(np.array(val_epoch_loss_progress[ds_name]))
+                epoch_val_loss = np.mean(np.array(val_epoch_loss_progress[ds_name]))
+                val_loss_mean_progress[ds_name].append(epoch_val_loss)
+                print(
+                    f"Mean validation loss for {ds_name} for epoch {epoch}: {epoch_val_loss}"
                 )
             val_epoch_loss_progress = {ds_name: [] for ds_name in val_datasets}
 
