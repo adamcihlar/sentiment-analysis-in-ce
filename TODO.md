@@ -1,4 +1,23 @@
 ### Tasks
+- [ ] Adaptation method
+    * Finish the method and follow the same structure as the finetuning - same
+      input and output, saving the models
+- [ ] How to connect the finetuning with adaptation? Mainly how to ensure that
+  the datasets are passed correctly, that the source_train and source_val for
+  adaptation are the same as they were for finetuning of the selected
+  classification head
+- [ ] Think about main.py
+    * What will be the main functionalities of the whole code?
+    * Inference, bulk inference, train,...
+    * Based on that define what and how will be exposed to the user - what will
+      the user eventually call
+- [ ] Preprocess data
+	* How? Inspiration here https://is.muni.cz/th/n0lnb/Sentiment_Analysis_cz.pdf + other Czech papers dealing with sentiment analysis
+	* Do I really need big preprocessing if I am using BERT-like tokenizers?
+	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
+	* I need at least some kind of preprocessing for the emails
+- [ ] Put all params to config
+
 - [x] Create loading of the Czech sentiment classification datasets
 	* What datasets? CSFD, FB, MALL
 	* Loading from url as well as loading local files from raw
@@ -8,7 +27,7 @@
     2. XLM-RoBERTa-large is just too big
     3. FERNETs are pretrained on less formal data, but that is probably something I don't really want
     * Overall Robeczech seems like the most reasonable option
-- [ ] Finetune selected models on sentiment datasets
+- [x] Finetune selected models on sentiment datasets
     * No further pretraining - I don't want the encoder to match the domain perfectly
     * Decide on the parameters and finetune - doesn't have to be serious but to have the "finetuned" model ready
     * Decide on what parameters might be changing during the training so that I can write the finetune method
@@ -30,18 +49,13 @@
     * First, try to replicate the results from the Robeczech paper, if I can get there, then I might try improving it
     * Output of the final model should be on scale 0-1 (~negative-positive) so I can either drop the neutral class and make it binary classification problem or I could use "distilation loss function" and give the neutral class value 0.5
 - [x] Learn how to run the code on Metacentrum
-- [ ] Preprocess data
-	* How? Inspiration here https://is.muni.cz/th/n0lnb/Sentiment_Analysis_cz.pdf + other Czech papers dealing with sentiment analysis
-	* Do I really need big preprocessing if I am using BERT-like tokenizers?
-	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
-	* I need at least some kind of preprocessing for the emails
 - [x] Create the ClassificationDataset class
     * It will be able to create and store the torch dataset instance
     * It will be able to create and store the torch dataloader instance
     * It will be able to preprocess and tokenize its inputs
     * It will be able to transform labels/take only subset of the data based on labels
     * Splitting to train, val, test will not be its method, will be a separate function
-- [ ] Model classes
+- [x] Model classes
     * Classifiers
     * Encoders - just to load correct models by default and simplify the forward method to output only the embeddings
     * Tokenizer - just to load correct models by default
