@@ -174,7 +174,7 @@ class ClassificationDataset:
         raise NotImplementedError
 
     def save_data(self, save_path):
-        df = pd.DataFrame({'text': self.X, 'label': self.y, 'source' self.source})
+        df = pd.DataFrame({"text": self.X, "label": self.y, "source": self.source})
         df.to_csv(save_path)
         pass
 
