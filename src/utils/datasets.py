@@ -173,6 +173,11 @@ class ClassificationDataset:
     def save_predictions(self):
         raise NotImplementedError
 
+    def save_data(self, save_path):
+        df = pd.DataFrame({'text': self.X, 'label': self.y, 'source' self.source})
+        df.to_csv(save_path)
+        pass
+
 
 def get_source_datasets_ready_for_finetuning(
     datasets: List[pd.DataFrame],
@@ -222,7 +227,7 @@ def get_source_datasets_ready_for_finetuning(
     [ds.create_dataset() for ds in val_datasets.values()]
     [
         ds.create_dataloader(
-            batch_size=batch_size, shuffle=shuffle, num_workers=num_workers
+            batch_size=batch_size, shuffle=False, num_workers=num_workers
         )
         for ds in val_datasets.values()
     ]
