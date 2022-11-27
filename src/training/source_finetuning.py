@@ -41,7 +41,7 @@ if __name__ == "__main__":
         val_datasets=val_datasets,
         optimizer=AdamW,
         optimizer_params={"lr": 2e-5, "betas": (0.9, 0.999)},
-        lr_params={"lr_decay": 0.95, "n_layers_following": 1},
+        lr_decay=0.95,
         lr_scheduler_call=get_linear_schedule_with_warmup,
         warmup_steps_proportion=0.1,
         num_epochs=4,
