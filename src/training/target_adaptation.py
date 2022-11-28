@@ -42,3 +42,5 @@ if __name__ == "__main__":
         shuffle=True,
         num_workers=0,
     )
+    target.y
+    source_train.y

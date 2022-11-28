@@ -20,7 +20,6 @@ from evaluate import load
 from src.utils.datasets import Dataset
 from src.utils.optimization import layer_wise_learning_rate
 
-# from src.utils.custom_layers import Linear
 from src.model.encoders import Encoder
 from src.utils.text_preprocessing import Preprocessor
 from src.model.tokenizers import Tokenizer
@@ -98,6 +97,7 @@ class Discriminator(torch.nn.Module):
                     torch.nn.Sigmoid(),
                 ),
             )
+        pass
 
     def forward(self, inputs):
         outputs = self.model(inputs)
@@ -481,9 +481,9 @@ class AdaptiveSentimentClassifier:
         Get distilation labels before the start of the training = inference of
         the source encoder and classifier with temperature T on source train.
         """
-        source_train_dataset
-        source_val_dataset
-        target_dataset
+        source_train
+        source_val
+        target
 
         optimizer = AdamW
         optimizer_params = {"lr": 2e-5, "betas": (0.9, 0.999)}
@@ -495,9 +495,7 @@ class AdaptiveSentimentClassifier:
 
         source_encoder = asc.source_encoder
         target_encoder = asc.target_encoder
-        classifier = asc.classifier(
-            path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL
-        )
+        classifier = asc.classifier
         discriminator = asc.discriminator
 
         # set correct states for model parts
@@ -536,16 +534,42 @@ class AdaptiveSentimentClassifier:
                 optimizer_params_list, **optimizer_params
             )
 
-        ##############################################################################
+        # get the total num of training steps to init lr_scheduler
+        num_steps_per_epoch = len(target.torch_dataloader)
+        num_training_steps = num_steps_per_epoch * num_epochs
 
-        # TODO continue here with the adaptation method
-        # decide how to pass the training details:
-        # optimizer DONE
-        # learning rates DONE
-        # lr schedules
-        # how to pass the same train and val source dataset?
-        # basically how the finetune and adapt methods will be connected
-        len_data_loader = min(len(src_data_loader), len(tgt_data_train_loader))
+        # get lr schedulers
+        lr_schedulers = [
+            lr_scheduler_call(
+                optimizer=optim,
+                num_warmup_steps=num_training_steps * warmup_steps_proportion,
+                num_training_steps=num_training_steps,
+            )
+            for optim in [encoder_optimizer, discriminator_optimizer]
+        ]
+
+        # all models to device, gpu if available, else cpu
+        device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+        [
+            model.to(device)
+            for model in [source_encoder, target_encoder, classifier, discriminator]
+        ]
+
+        # track training info
+        val_metrics = {metric: load(metric) for metric in metrics}
+        val_metrics_progress = {metric_name: [] for metric_name in val_metrics}
+        val_loss_mean_progress = []
+        train_loss_mean_progress = {
+            ds_name: [] for ds_name in ["discrimination", "classification"]
+        }
+        train_loss_batch_progress = {
+            ds_name: [] for ds_name in ["discrimination", "classification"]
+        }
+
+        # TODO
+        # prepare labels for distilation
 
         for epoch in range(args.num_epochs):
             # zip source and target data pair
