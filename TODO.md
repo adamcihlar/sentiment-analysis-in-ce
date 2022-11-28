@@ -1,24 +1,29 @@
 ### Tasks
-- [ ] Adaptation method
-    * Finish the method and follow the same structure as the finetuning - same
-      input and output, saving the models
-- [ ] How to connect the finetuning with adaptation? Mainly how to ensure that
-  the datasets are passed correctly, that the source_train and source_val for
-  adaptation are the same as they were for finetuning of the selected
-  classification head
+- [ ] Train the models
+    * Use balanced datasets (in terms of source and labels) for the multitask
+      learning?
 - [ ] Think about main.py
     * What will be the main functionalities of the whole code?
     * Inference, bulk inference, train,...
     * Based on that define what and how will be exposed to the user - what will
       the user eventually call
+- [ ] API with inference
+- [ ] Preprocess the emails
 - [ ] Preprocess data
 	* How? Inspiration here https://is.muni.cz/th/n0lnb/Sentiment_Analysis_cz.pdf + other Czech papers dealing with sentiment analysis
 	* Do I really need big preprocessing if I am using BERT-like tokenizers?
 	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
 	* I need at least some kind of preprocessing for the emails
 - [ ] Put all params to config
-- [ ] Model to CUDA - do I have to put there also every single input tensor?
 
+- [x] Adaptation method
+    * Finish the method and follow the same structure as the finetuning - same
+      input and output, saving the models
+- [x] How to connect the finetuning with adaptation? Mainly how to ensure that
+  the datasets are passed correctly, that the source_train and source_val for
+  adaptation are the same as they were for finetuning of the selected
+  classification head
+- [x] Model to CUDA - do I have to put there also every single input tensor?
 - [x] Create loading of the Czech sentiment classification datasets
 	* What datasets? CSFD, FB, MALL
 	* Loading from url as well as loading local files from raw
