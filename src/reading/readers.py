@@ -47,11 +47,11 @@ def read_finetuning_source(
 ):
     train_path = os.path.join(
         paths.DATA_FINAL_SOURCE_TRAIN,
-        "_".join([selected_model, selected_dataset] + ".csv"),
+        "_".join([selected_model, selected_dataset]) + ".csv",
     )
     val_path = os.path.join(
         paths.DATA_FINAL_SOURCE_VAL,
-        "_".join([selected_model, selected_dataset] + ".csv"),
+        "_".join([selected_model, selected_dataset]) + ".csv",
     )
     train_ds = pd.read_csv(train_path, index_col=0)
     val_ds = pd.read_csv(val_path, index_col=0)
