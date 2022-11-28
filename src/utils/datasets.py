@@ -48,9 +48,9 @@ def get_finetuning_datasets(source_dataset: pd.DataFrame):
 
 
 def get_adaptation_datasets(
-    source_train_dataset_with_predictions: pd.DataFrame,
-    source_val_dataset: pd.DataFrame,
-    target_dataset: pd.DataFrame,
+    source_train_df: pd.DataFrame,
+    source_val_df: pd.DataFrame,
+    target_df: pd.DataFrame,
 ):
     """
     After the source encoder and classifier are trained,
@@ -60,8 +60,6 @@ def get_adaptation_datasets(
     how the target encoder and classier are performing on that.
     Sample the source train dataset based on the length of target dataset
     to get as much information as possible from the target while adapting.
-
-    Get the first input by calling get_predictions method of ClassificationDataset.
 
     Returns:
         adaptation_source_train, that will be used in both adaptation steps, but with different labels
@@ -179,7 +177,7 @@ class ClassificationDataset:
         pass
 
 
-def get_source_datasets_ready_for_finetuning(
+def get_datasets_ready_for_finetuning(
     datasets: List[pd.DataFrame],
     drop_neutral,
     preprocessor,
@@ -232,3 +230,35 @@ def get_source_datasets_ready_for_finetuning(
         for ds in val_datasets.values()
     ]
     return train_datasets, val_datasets
+
+
+def get_datasets_ready_for_adaptation(
+    source_train_df: pd.DataFrame,
+    source_val_df: pd.DataFrame,
+    target_df: pd.DataFrame,
+    preprocessor,
+    tokenizer,
+    batch_size,
+    shuffle,
+    num_workers,
+):
+    source_train_df, source_val_df, target_df = get_adaptation_datasets(
+        source_train_df, source_val_df, target_df
+    )
+    source_train = ClassificationDataset(
+        source_train_df.text, source_train_df.label, source_train_df.source
+    )
+    source_val = ClassificationDataset(
+        source_val_df.text, source_val_df.label, source_val_df.source
+    )
+    target = ClassificationDataset(target_df.text, target_df.label, target_df.source)
+
+    [ds.preprocess(preprocessor) for ds in [source_train, source_val, target]]
+    [ds.tokenize(tokenizer) for ds in [source_train, source_val, target]]
+    [ds.create_dataset() for ds in [source_train, source_val, target]]
+    [
+        ds.create_dataloader(batch_size, shuffle, num_workers)
+        for ds in [source_train, target]
+    ]
+    source_val.create_dataloader(batch_size, shuffle=False, num_workers=num_workers)
+    return source_train, source_val, target
