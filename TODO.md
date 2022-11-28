@@ -2,6 +2,7 @@
 - [ ] Train the models
     * Use balanced datasets (in terms of source and labels) for the multitask
       learning?
+- [ ] Look for a lighter model
 - [ ] Think about main.py
     * What will be the main functionalities of the whole code?
     * Inference, bulk inference, train,...
