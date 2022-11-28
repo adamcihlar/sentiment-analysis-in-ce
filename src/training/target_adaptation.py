@@ -27,7 +27,5 @@ asc = AdaptiveSentimentClassifier(
     ClassificationHead,
     Discriminator(),
     Encoder(path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_ENCODER_FINAL),
-    # paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL,
+    paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL,
 )
-
-type(acs.classifier)
