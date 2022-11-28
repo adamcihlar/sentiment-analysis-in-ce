@@ -1,5 +1,7 @@
 import os
 
+from src.config import parameters
+
 # DATA
 DATA = "data"
 
@@ -45,10 +47,18 @@ OUTPUT_MODELS_FINETUNED_CLASSIFIER = os.path.join(
     OUTPUT_MODELS_FINETUNED, "classification_head"
 )
 OUTPUT_MODELS_FINETUNED_ENCODER_FINAL = os.path.join(
-    OUTPUT_MODELS_FINETUNED_ENCODER, "ufalrobeczech-base_20221127-151233_3"
+    OUTPUT_MODELS_FINETUNED_ENCODER,
+    "_".join([parameters.FINETUNED_CHECKPOINT, parameters.FINETUNED_EPOCH]),
 )
 OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL = os.path.join(
-    OUTPUT_MODELS_FINETUNED_CLASSIFIER, "ufalrobeczech-base_20221127-151233_mall_3"
+    OUTPUT_MODELS_FINETUNED_CLASSIFIER,
+    "_".join(
+        [
+            parameters.FINETUNED_CHECKPOINT,
+            parameters.FINETUNED_DATASET,
+            parameters.FINETUNED_EPOCH,
+        ]
+    ),
 )
 
 # ADAPTED
