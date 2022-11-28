@@ -35,6 +35,7 @@ if __name__ == "__main__":
         source_train_df,
         source_val_df,
         target_df,
+        drop_neutral=True,
         asc.preprocessor,
         asc.tokenizer,
         batch_size=8,

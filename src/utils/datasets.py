@@ -236,6 +236,7 @@ def get_datasets_ready_for_adaptation(
     source_train_df: pd.DataFrame,
     source_val_df: pd.DataFrame,
     target_df: pd.DataFrame,
+    drop_neutral,
     preprocessor,
     tokenizer,
     batch_size,
@@ -245,6 +246,10 @@ def get_datasets_ready_for_adaptation(
     source_train_df, source_val_df, target_df = get_adaptation_datasets(
         source_train_df, source_val_df, target_df
     )
+    if target_df.label is not None:
+        target_df = drop_undefined_classes(target_df)
+        target_df = transform_labels_to_probs(target_df, drop_neutral=drop_neutral)
+
     source_train = ClassificationDataset(
         source_train_df.text, source_train_df.label, source_train_df.source
     )
