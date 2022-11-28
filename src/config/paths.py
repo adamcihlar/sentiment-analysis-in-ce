@@ -48,7 +48,7 @@ OUTPUT_MODELS_FINETUNED_CLASSIFIER = os.path.join(
 )
 OUTPUT_MODELS_FINETUNED_ENCODER_FINAL = os.path.join(
     OUTPUT_MODELS_FINETUNED_ENCODER,
-    "_".join([parameters.FINETUNED_CHECKPOINT, parameters.FINETUNED_EPOCH]),
+    "_".join([parameters.FINETUNED_CHECKPOINT, str(parameters.FINETUNED_EPOCH)]),
 )
 OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL = os.path.join(
     OUTPUT_MODELS_FINETUNED_CLASSIFIER,
@@ -56,7 +56,7 @@ OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL = os.path.join(
         [
             parameters.FINETUNED_CHECKPOINT,
             parameters.FINETUNED_DATASET,
-            parameters.FINETUNED_EPOCH,
+            str(parameters.FINETUNED_EPOCH),
         ]
     ),
 )
