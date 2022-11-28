@@ -17,6 +17,7 @@
 	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
 	* I need at least some kind of preprocessing for the emails
 - [ ] Put all params to config
+- [ ] Model to CUDA - do I have to put there also every single input tensor?
 
 - [x] Create loading of the Czech sentiment classification datasets
 	* What datasets? CSFD, FB, MALL
