@@ -415,9 +415,9 @@ class AdaptiveSentimentClassifier:
 
     def adapt(
         self,
-        source_train_dataset,
-        source_val_dataset,
-        target_dataset,
+        source_train,
+        source_val,
+        target,
         optimizer,
         optimizer_params,
         lr_decay,
@@ -482,24 +482,11 @@ class AdaptiveSentimentClassifier:
         Get distilation labels before the start of the training = inference of
         the source encoder and classifier with temperature T on source train.
         """
-        source_train
-        source_val
-        target
 
-        optimizer = AdamW
-        optimizer_params = {"lr": 2e-5, "betas": (0.9, 0.999)}
-        lr_decay = 0.9
-        lr_scheduler_call = get_linear_schedule_with_warmup
-        warmup_steps_proportion = 0.1
-        num_epochs = 4
-        temperature = 2
-        loss_combination_params = (0.5, 0.5)
-        metrics = ["f1", "accuracy", "precision", "recall"]
-
-        source_encoder = asc.source_encoder
-        target_encoder = asc.target_encoder
-        classifier = asc.classifier
-        discriminator = asc.discriminator
+        source_encoder = self.source_encoder
+        target_encoder = self.target_encoder
+        classifier = self.classifier
+        discriminator = self.discriminator
 
         # save start time of the training
         start_time = time.strftime("%Y%m%d-%H%M%S")

@@ -42,3 +42,18 @@ if __name__ == "__main__":
         shuffle=True,
         num_workers=0,
     )
+
+    asc.adapt(
+        source_train,
+        source_val,
+        target,
+        optimizer=AdamW,
+        optimizer_params={"lr": 2e-5, "betas": (0.9, 0.999)},
+        lr_decay=0.9,
+        lr_scheduler_call=get_linear_schedule_with_warmup,
+        warmup_steps_proportion=0.1,
+        num_epochs=4,
+        temperature=2,
+        loss_combination_params=(0.5, 0.5),
+        metrics=["f1", "accuracy", "precision", "recall"],
+    )
