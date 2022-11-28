@@ -22,3 +22,8 @@ def layer_wise_learning_rate(
         )
     )
     return optimizer_params_list
+
+
+def inverted_sigmoid(probabilities: torch.Tensor):
+    logits = torch.log(probabilities / (1 - probabilities))
+    return logits

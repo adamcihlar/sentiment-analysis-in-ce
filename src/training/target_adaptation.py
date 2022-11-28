@@ -38,9 +38,7 @@ if __name__ == "__main__":
         drop_neutral=True,
         preprocessor=asc.preprocessor,
         tokenizer=asc.tokenizer,
-        batch_size=8,
+        batch_size=4,
         shuffle=True,
         num_workers=0,
     )
-    target.y
-    source_train.y

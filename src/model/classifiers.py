@@ -9,6 +9,7 @@ from tqdm import tqdm
 from loguru import logger
 
 import numpy as np
+import pandas as pd
 import torch
 from transformers import (
     RobertaTokenizer,
@@ -18,7 +19,7 @@ from torch.utils.data import DataLoader
 from evaluate import load
 
 from src.utils.datasets import Dataset
-from src.utils.optimization import layer_wise_learning_rate
+from src.utils.optimization import layer_wise_learning_rate, inverted_sigmoid
 
 from src.model.encoders import Encoder
 from src.utils.text_preprocessing import Preprocessor
@@ -113,7 +114,7 @@ class AdaptiveSentimentClassifier:
         classifier: Type[ClassificationHead],
         discriminator,
         target_encoder,
-        classifier_checkpoint_path,
+        classifier_checkpoint_path=None,
     ):
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
@@ -491,6 +492,8 @@ class AdaptiveSentimentClassifier:
         lr_scheduler_call = get_linear_schedule_with_warmup
         warmup_steps_proportion = 0.1
         num_epochs = 4
+        temperature = 2
+        loss_combination_params = (0.5, 0.5)
         metrics = ["f1", "accuracy", "precision", "recall"]
 
         source_encoder = asc.source_encoder
@@ -568,50 +571,58 @@ class AdaptiveSentimentClassifier:
             ds_name: [] for ds_name in ["discrimination", "classification"]
         }
 
-        # TODO
         # prepare labels for distilation
+        batch_size = source_train.torch_dataloader.batch_size
+        num_workers = source_train.torch_dataloader.num_workers
+        source_train.create_dataloader(
+            batch_size=batch_size, shuffle=False, num_workers=num_workers
+        )
+        y_pred = torch.empty(0)
+        logger.info("Getting the labels for knowledge distillation.")
+        progress_bar = tqdm(range(len(source_train.torch_dataloader)))
+        for batch in source_train.torch_dataloader:
+            with torch.no_grad():
+                source_features = source_encoder(**batch)
+                probs = classifier(source_features)
+                dist_probs = torch.sigmoid(inverted_sigmoid(probs) / temperature)
+            y_pred = torch.cat((y_pred, dist_probs), 0)
+            progress_bar.update(1)
+        source_train.y = pd.Series(y_pred.flatten().numpy(), name="label")
+        source_train.create_dataset()
+        source_train.create_dataloader(
+            batch_size=batch_size, shuffle=True, num_workers=num_workers
+        )
 
-        for epoch in range(args.num_epochs):
-            # zip source and target data pair
-            data_zip = enumerate(zip(src_data_loader, tgt_data_train_loader))
-            for step, (
-                (reviews_src, src_mask, _),
-                (reviews_tgt, tgt_mask, _),
-            ) in data_zip:
+        # display training progress
+        progress_bar = tqdm(range(num_training_steps))
+        counter = 0
+        display_loss_after_iters = math.ceil(num_steps_per_epoch / 100)
 
-                # for every step take samples from both domains
-                reviews_src = make_cuda(reviews_src)
-                src_mask = make_cuda(src_mask)
-                reviews_tgt = make_cuda(reviews_tgt)
-                tgt_mask = make_cuda(tgt_mask)
+        for epoch in range(num_epochs):
+            # zip source and target data pairs
+            dataloaders_zipped = zip(
+                source_train.torch_dataloader, target.torch_dataloader
+            )
 
+            for source_batch, target_batch in dataloaders_zipped:
                 # zero gradients for optimizer
-                optimizer_D.zero_grad()
+                discriminator_optimizer.zero_grad()
 
-                # encoding of source sample by both encoders and target sample by
+                # encoding the source sample by both encoders and target sample by
                 # target encoder
                 with torch.no_grad():
-                    feat_src = src_encoder(reviews_src, src_mask)
-                feat_src_tgt = tgt_encoder(reviews_src, src_mask)
-                feat_tgt = tgt_encoder(reviews_tgt, tgt_mask)
+                    src_feat_src_enc = source_encoder(**source_batch)
+                src_feat_tgt_enc = target_encoder(**source_batch)
+                tgt_feat_tgt_enc = target_encoder(**target_batch)
 
-                # feat_src = torch.zeros(1, 2, 768)
-                # feat_src_tgt = torch.ones(1, 2, 768)
-                # feat_tgt = torch.ones(1, 2, 768) + 1
-
-                # concatenate source and target domain batches(!) encoded by
-                # target (sic!) encoder
-                # this is probably mistake in this implementation, because the
-                # discriminator should see the source domain encoded by the source
-                # encoder so that the target encoder can be getting as close as
-                # possible to these "ground truth" source-source encodings
-                # this is for the task for discriminator - it will try to
-                # distinguish between source and target domains encoded by the same
-                # (target (sic!)) encoder
-                feat_concat = torch.cat((feat_src_tgt, feat_tgt), 0)
+                # concat src_src with tgt_tgt for discriminator training
+                concat_feat = torch.cat((src_feat_src_enc, tgt_feat_tgt_enc), 0)
 
                 # predict on discriminator
-                pred_concat = discriminator(feat_concat.detach())
+                domain_pred = discriminator(concat_feat.detach())
+
+                # TODO
+                # continue here
 
                 # prepare real and fake label
                 # why real and fake? So source domain = 1 and target domain = 0
