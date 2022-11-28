@@ -584,6 +584,7 @@ class AdaptiveSentimentClassifier:
         counter = 0
         display_loss_after_iters = math.ceil(num_steps_per_epoch / 100)
 
+        logger.info("Starting the adaptation")
         for epoch in range(num_epochs):
             # zip source and target data pairs
             dataloaders_zipped = zip(
@@ -600,7 +601,6 @@ class AdaptiveSentimentClassifier:
             target_encoder.train()
 
             for source_batch, target_batch in dataloaders_zipped:
-                break
                 # tensors to cuda
                 source_batch = {k: v.to(device) for k, v in source_batch.items()}
                 target_batch = {k: v.to(device) for k, v in target_batch.items()}
