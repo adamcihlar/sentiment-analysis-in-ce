@@ -1,4 +1,5 @@
 from typing import List
+import torch
 
 
 def layer_wise_learning_rate(
