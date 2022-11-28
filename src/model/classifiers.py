@@ -406,7 +406,7 @@ class AdaptiveSentimentClassifier:
                 "_".join([self.name, start_time, ds_name]) + ".csv",
             )
             os.makedirs(os.path.split(save_path)[0], exist_ok=True)
-            train_datasets[ds_name].save_data(save_path)
+            val_datasets[ds_name].save_data(save_path)
 
         pass
 
