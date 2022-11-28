@@ -415,9 +415,12 @@ class AdaptiveSentimentClassifier:
         source_train_dataset,
         source_val_dataset,
         target_dataset,
-        # optimizers
-        # learning rates
-        # lr_schedules
+        optimizer,
+        optimizer_params,
+        lr_decay,
+        lr_scheduler_call,
+        warmup_steps_proportion,
+        num_epochs,
         temperature,  # for knowledge distilation
         loss_combination_params,  # tuple with alpha and beta
         metrics,
@@ -472,6 +475,9 @@ class AdaptiveSentimentClassifier:
             save also the Distcriminator? why not
             training info - train_loss, val_loss, val_metrics of the target
             encoder on the source task
+
+        Get distilation labels before the start of the training = inference of
+        the source encoder and classifier with temperature T on source train.
         """
         source_train_dataset
         source_val_dataset
