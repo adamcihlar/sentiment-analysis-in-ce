@@ -268,7 +268,7 @@ class AdaptiveSentimentClassifier:
             }
 
             for source_ds in samples_schedule:
-                # get batch from the selected data source
+                # get batch from the selected data source and put to the right device
                 batch = {
                     k: v.to(device)
                     for k, v in next(dataloader_iterators[source_ds]).items()
@@ -501,6 +501,9 @@ class AdaptiveSentimentClassifier:
         classifier = asc.classifier
         discriminator = asc.discriminator
 
+        # save start time of the training
+        start_time = time.strftime("%Y%m%d-%H%M%S")
+
         # set correct states for model parts
         source_encoder.eval()
         classifier.eval()
@@ -509,7 +512,7 @@ class AdaptiveSentimentClassifier:
 
         # setup criterion and optimizer
         bce_loss = torch.nn.BCELoss()
-        kldiv_loss = torch.nn.KLDivLoss(reduction="batchmean")
+        kldiv_loss = torch.nn.KLDivLoss(reduction="batchmean", log_target=True)
 
         # get optimizer for each classfication head and the shared encoder
         if lr_decay is None or lr_decay == 1:
@@ -564,12 +567,8 @@ class AdaptiveSentimentClassifier:
         val_metrics = {metric: load(metric) for metric in metrics}
         val_metrics_progress = {metric_name: [] for metric_name in val_metrics}
         val_loss_mean_progress = []
-        train_loss_mean_progress = {
-            ds_name: [] for ds_name in ["discrimination", "classification"]
-        }
-        train_loss_batch_progress = {
-            ds_name: [] for ds_name in ["discrimination", "classification"]
-        }
+        train_mean_loss_dict = {loss: [] for loss in ["disc", "gen", "class", "enc"]}
+        train_batch_loss_dict = {loss: [] for loss in ["disc", "gen", "class", "enc"]}
 
         # prepare labels for distilation
         batch_size = source_train.torch_dataloader.batch_size
@@ -604,7 +603,21 @@ class AdaptiveSentimentClassifier:
                 source_train.torch_dataloader, target.torch_dataloader
             )
 
+            # lists for tracking the metrics
+            train_loss_dict = {loss: [] for loss in ["disc", "gen", "class", "enc"]}
+            train_epoch_loss_dict = {
+                loss: [] for loss in ["disc", "gen", "class", "enc"]
+            }
+
+            # target encoder to train state
+            target_encoder.train()
+
             for source_batch, target_batch in dataloaders_zipped:
+                break
+                # tensors to cuda
+                source_batch = {k: v.to(device) for k, v in source_batch.items()}
+                target_batch = {k: v.to(device) for k, v in target_batch.items()}
+
                 # zero gradients for optimizer
                 discriminator_optimizer.zero_grad()
 
@@ -621,78 +634,169 @@ class AdaptiveSentimentClassifier:
                 # predict on discriminator
                 domain_pred = discriminator(concat_feat.detach())
 
-                # TODO
-                # continue here
-
-                # prepare real and fake label
-                # why real and fake? So source domain = 1 and target domain = 0
-                # this is what we show to the discriminator and it really corresponds to
-                # the input domain.
-                # However, while training the target encoder we optimize it to
-                # encode target domain in such way, that it is classified by the
-                # discriminator as source domain (=> "encoder learns to trick the
-                # discriminator") - in that moment the labels are "fake" because
-                # the sample comes from the target domain but we give it the label
-                # of source domain
-                label_src = make_cuda(torch.ones(feat_src_tgt.size(0))).unsqueeze(1)
-                label_tgt = make_cuda(torch.zeros(feat_tgt.size(0))).unsqueeze(1)
-                label_concat = torch.cat((label_src, label_tgt), 0)
+                # prepare real (discriminator) and fake (target encoder) label
+                label_src = to_cuda(torch.ones(src_feat_src_enc.size(0))).unsqueeze(1)
+                label_tgt = to_cuda(torch.zeros(tgt_feat_tgt_enc.size(0))).unsqueeze(1)
+                domain = torch.cat((label_src, label_tgt), 0)
 
                 # compute loss for discriminator - standard binary classification loss
-                dis_loss = BCELoss(pred_concat, label_concat)
-                dis_loss.backward()
+                discriminator_loss = bce_loss(domain_pred, domain)
+                discriminator_loss.backward()
 
-                # this sets all params of the discriminator to (by default) range [-0.01, 0.01]
-                # I am not sure if I noticed this in the paper
-                # yes, this is to make the training more stable
-                for p in discriminator.parameters():
-                    p.data.clamp_(-args.clip_value, args.clip_value)
-                # optimize discriminator - updates only the discriminator's weights
-                optimizer_D.step()
-
-                # this is something I don't really undestand - there is only one
-                # output neuron with sigmoid activation (typical binary
-                # classification settings)
-                # so the argmax below always returns only zeros as the shape of
-                # pred_concat is always (batch_size, 1) so the max element has
-                # always index 0
-                # but it doesn't affect the optimization, it is just info about the
-                # training
-                pred_cls = torch.squeeze(pred_concat.max(1)[1])
-                acc = (pred_cls == label_concat).float().mean()
+                # update discriminator's weights
+                discriminator_optimizer.step()
 
                 # zero gradients for target encoder optimizer
-                optimizer_G.zero_grad()
-                T = args.temperature
+                encoder_optimizer.zero_grad()
 
-                # predict on discriminator
                 # predict the domain of target domain encoded by the target encoder
-                pred_tgt = discriminator(feat_tgt)
-                # we want the target encoder to encode its target domain samples
-                # like if it was a source domain sample - map it to the same space
-                # that is why the loss is computed with respect to the source
-                # domain label even though we encoded target domain sample
-                gen_loss = BCELoss(pred_tgt, label_src)
+                fake_domain_pred = discriminator(tgt_feat_tgt_enc)
+                # compute loss like if it was source domain encoded
+                gen_loss = bce_loss(fake_domain_pred, label_src)
 
                 # logits for KL-divergence
-                # classify the source encoded by both source and target encoder and
-                # distill the knowledge from source encoder to target encoder
-                # this is why it's once log(prob) and once just probability -
-                # https://stackoverflow.com/questions/62806681/pytorch-kldivloss-loss-is-negative
-                with torch.no_grad():
-                    src_prob = F.softmax(src_classifier(feat_src) / T, dim=-1)
-                tgt_prob = F.log_softmax(src_classifier(feat_src_tgt) / T, dim=-1)
-                kd_loss = KLDivLoss(tgt_prob, src_prob.detach()) * T * T
+                # for correct computation of KL-divergence I need to "complete"
+                # the distibution - e.g. from prob 0.3 of class 0 make (0.3, 0.7)
+                src_prob = source_batch["labels"].unsqueeze(1)
+                log_src_prob = get_log_prob_for_kl_div(src_prob)
+                tgt_prob = torch.sigmoid(
+                    inverted_sigmoid(classifier(src_feat_tgt_enc)) / temperature
+                )
+                log_tgt_prob = get_log_prob_for_kl_div(tgt_prob)
+
+                kd_loss = (
+                    kldiv_loss(log_tgt_prob, log_src_prob.detach())
+                    * temperature
+                    * temperature
+                )
 
                 # compute the combined loss for target encoder
-                loss_tgt = args.alpha * gen_loss + args.beta * kd_loss
-                loss_tgt.backward()
-                torch.nn.utils.clip_grad_norm_(
-                    tgt_encoder.parameters(), args.max_grad_norm
+                encoder_loss = (
+                    loss_combination_params[0] * gen_loss
+                    + loss_combination_params[1] * kd_loss
                 )
-                torch.nn.utils.clip_grad_norm_(tgt_encoder.parameters(), 1)
+                encoder_loss.backward()
+
                 # optimize target encoder
-                optimizer_G.step()
+                encoder_optimizer.step()
+
+                # update learning rates
+                [lr_scheduler.step() for lr_scheduler in lr_schedulers]
+                progress_bar.update(1)
+
+                # save (and display training loss)
+                loss_list = [discriminator_loss, gen_loss, kd_loss, encoder_loss]
+                {
+                    train_loss_dict[name].append(loss.item())
+                    for name, loss in zip(train_loss_dict, loss_list)
+                }
+                {
+                    train_epoch_loss_dict[name].append(loss.item())
+                    for name, loss in zip(train_loss_dict, loss_list)
+                }
+                if counter % display_loss_after_iters == 0:
+                    [
+                        print(
+                            "Training loss - ",
+                            loss_name,
+                            ": ",
+                            np.mean(np.array(train_loss_dict[loss_name])),
+                            sep="",
+                        )
+                        for loss_name in train_loss_dict
+                    ]
+                    train_loss_dict = {
+                        loss: [] for loss in ["disc", "gen", "class", "enc"]
+                    }
+
+            # validation
+            target_encoder.eval()
+            val_epoch_loss_progress = []
+            for batch in source_val.torch_dataloader:
+                batch = {k: v.to(device) for k, v in batch.items()}
+                with torch.no_grad():
+                    features = target_encoder(**batch)
+                    probs = classifier(features)
+                cls_loss = bce_loss(
+                    probs, batch["labels"].unsqueeze(1).to(torch.float32)
+                )
+                val_epoch_loss_progress.append(cls_loss.item())
+                predictions = torch.round(probs)
+                [
+                    val_metrics[val_metric].add_batch(
+                        predictions=predictions, references=batch["labels"]
+                    )
+                    for val_metric in val_metrics
+                ]
+            [
+                val_metrics_progress[val_metric].append(
+                    val_metrics[val_metric].compute()[val_metric]
+                )
+                for val_metric in val_metrics
+            ]
+
+            # compute average losses per epoch
+            {
+                train_batch_loss_dict[loss].append(train_epoch_loss_dict[loss])
+                for loss in train_epoch_loss_dict
+            }
+            {
+                train_mean_loss_dict[loss].append(
+                    np.mean(np.array(train_epoch_loss_dict[loss]))
+                )
+                for loss in train_epoch_loss_dict
+            }
+            [
+                print(
+                    "Mean training loss - ",
+                    loss_name,
+                    ": ",
+                    np.mean(np.array(train_mean_loss_dict[loss_name])),
+                    sep="",
+                )
+                for loss_name in train_mean_loss_dict
+            ]
+            val_loss_mean_progress.append(np.mean(np.array(val_epoch_loss_progress)))
+
+            # save all models from the epoch
+            # encoder
+            save_path = os.path.join(
+                paths.OUTPUT_MODELS_ADAPTED_ENCODER,
+                "_".join([self.name, start_time, str(epoch)]),
+            )
+            os.makedirs(os.path.split(save_path)[0], exist_ok=True)
+            torch.save(target_encoder.state_dict(), save_path)
+            # discriminator
+            save_path = os.path.join(
+                paths.OUTPUT_MODELS_ADAPTED_DISCRIMINATOR,
+                "_".join([self.name, start_time, str(epoch)]),
+            )
+            os.makedirs(os.path.split(save_path)[0], exist_ok=True)
+            torch.save(discriminator.state_dict(), save_path)
+
+        # save the training info
+        val_metrics_progress["val_loss"] = val_loss_mean_progress
+        train_mean_loss_dict_renamed = {
+            "train_" + loss: train_mean_loss_dict[loss] for loss in train_mean_loss_dict
+        }
+        val_metrics_progress.update(train_mean_loss_dict_renamed)
+
+        info_save_path = os.path.join(
+            paths.OUTPUT_INFO_ADAPTATION,
+            "_".join([self.name, "val", start_time]) + ".json",
+        )
+        os.makedirs(os.path.split(info_save_path)[0], exist_ok=True)
+        with open(info_save_path, "w+") as fp:
+            json.dump(val_metrics_progress, fp)
+
+        info_save_path = os.path.join(
+            paths.OUTPUT_INFO_ADAPTATION,
+            "_".join([self.name, "train", start_time]) + ".json",
+        )
+        os.makedirs(os.path.split(info_save_path)[0], exist_ok=True)
+        with open(info_save_path, "w+") as fp:
+            json.dump(train_loss_batch_progress, fp)
+        pass
 
 
 if __name__ == "__main__":
