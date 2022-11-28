@@ -17,15 +17,21 @@ from src.model.classifiers import (
     Discriminator,
 )
 
-source_train_dataset, source_val_dataset = read_finetuning_source()
-target_dataset = read_csfd().sample(10)
 
-asc = AdaptiveSentimentClassifier(
-    Preprocessor(),
-    Tokenizer(),
-    Encoder(path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_ENCODER_FINAL),
-    ClassificationHead,
-    Discriminator(),
-    Encoder(path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_ENCODER_FINAL),
-    paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL,
-)
+if __name__ == "__main__":
+    source_train_df, source_val_df = read_finetuning_source()
+    target_df = read_csfd().sample(10)
+
+    source_train, source_val, target = get_datasets_ready_for_adaptation(
+        source_train_df, source_val_df, target_df
+    )
+
+    asc = AdaptiveSentimentClassifier(
+        Preprocessor(),
+        Tokenizer(),
+        Encoder(path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_ENCODER_FINAL),
+        ClassificationHead,
+        Discriminator(),
+        Encoder(path_to_finetuned=paths.OUTPUT_MODELS_FINETUNED_ENCODER_FINAL),
+        paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL,
+    )

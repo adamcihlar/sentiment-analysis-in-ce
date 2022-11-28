@@ -17,16 +17,6 @@ if __name__ == "__main__":
     source_facebook = read_facebook().sample(100)
     datasets = [source_facebook, source_mall]
 
-    train_datasets, val_datasets = get_source_datasets_ready_for_finetuning(
-        datasets,
-        drop_neutral=True,
-        preprocessor=Preprocessor(),
-        tokenizer=Tokenizer(),
-        batch_size=8,
-        shuffle=True,
-        num_workers=0,
-    )
-
     asc = AdaptiveSentimentClassifier(
         Preprocessor(),
         Tokenizer(),
@@ -34,6 +24,16 @@ if __name__ == "__main__":
         ClassificationHead,
         Discriminator(),
         Encoder(),
+    )
+
+    train_datasets, val_datasets = get_datasets_ready_for_finetuning(
+        datasets,
+        drop_neutral=True,
+        preprocessor=asc.preprocessor,
+        tokenizer=asc.tokenizer,
+        batch_size=8,
+        shuffle=True,
+        num_workers=0,
     )
 
     asc.finetune(
