@@ -748,7 +748,9 @@ class AdaptiveSentimentClassifier:
                 )
                 for loss_name in train_mean_loss_dict
             ]
-            val_loss_mean_progress.append(np.mean(np.array(val_epoch_loss_progress)))
+            epoch_val_loss = np.mean(np.array(val_epoch_loss_progress))
+            val_loss_mean_progress.append(epoch_val_loss)
+            print(f"Mean validation loss for epoch {epoch}: {epoch_val_loss}")
 
             # save all models from the epoch
             # encoder
@@ -787,7 +789,7 @@ class AdaptiveSentimentClassifier:
         )
         os.makedirs(os.path.split(info_save_path)[0], exist_ok=True)
         with open(info_save_path, "w+") as fp:
-            json.dump(train_loss_batch_progress, fp)
+            json.dump(train_batch_loss_dict, fp)
         pass
 
 
