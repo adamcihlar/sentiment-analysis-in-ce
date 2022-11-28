@@ -71,12 +71,12 @@ def get_adaptation_datasets(
             target encoder the label is "source domain"
             - this dataset is train and test at the same time, just (of course) using different labels
     """
-    replace_samples = len(target_dataset) > len(source_train_dataset_with_predictions)
-    adaptation_source_train = source_train_dataset_with_predictions.sample(
-        len(target_dataset), replace=replace_samples
+    replace_samples = len(target_df) > len(source_train_df)
+    adaptation_source_train = source_train_df.sample(
+        len(target_df), replace=replace_samples
     )
-    adaptation_source_val = source_val_dataset
-    adaptation_target = target_dataset
+    adaptation_source_val = source_val_df
+    adaptation_target = target_df
     return adaptation_source_train, adaptation_source_val, adaptation_target
 
 

@@ -2,7 +2,7 @@ from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
 
 from src.reading.readers import read_facebook, read_mall, read_csfd
-from src.utils.datasets import get_source_datasets_ready_for_finetuning
+from src.utils.datasets import get_datasets_ready_for_finetuning
 from src.utils.text_preprocessing import Preprocessor
 from src.model.tokenizers import Tokenizer
 from src.model.encoders import Encoder
