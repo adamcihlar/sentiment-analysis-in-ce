@@ -111,11 +111,15 @@ class AdaptiveSentimentClassifier:
         classifier: Type[ClassificationHead],
         discriminator,
         target_encoder,
+        classifier_checkpoint_path,
     ):
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
         self.source_encoder = source_encoder
-        self.classifier = classifier
+        if classifier_checkpoint_path is not None:
+            self.classifier = classifier(classifier_checkpoint_path)
+        else:
+            self.classifier = classifier
         self.target_encoder = target_encoder
         self.discriminator = discriminator
         self.name = self.source_encoder.name
