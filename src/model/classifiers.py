@@ -19,7 +19,12 @@ from torch.utils.data import DataLoader
 from evaluate import load
 
 from src.utils.datasets import Dataset
-from src.utils.optimization import layer_wise_learning_rate, inverted_sigmoid, to_cuda
+from src.utils.optimization import (
+    layer_wise_learning_rate,
+    inverted_sigmoid,
+    to_cuda,
+    get_log_prob_for_kl_div,
+)
 
 from src.model.encoders import Encoder
 from src.utils.text_preprocessing import Preprocessor
