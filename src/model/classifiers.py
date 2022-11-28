@@ -58,7 +58,9 @@ class ClassificationHead(torch.nn.Module):
                 )
             )
         if path_to_finetuned is not None:
-            logger.info(f"Loading model parameters from {path_to_finetuned}.")
+            logger.info(
+                f"Loading model parameters for ClassificationHead from {path_to_finetuned}."
+            )
             self.load_state_dict(torch.load(path_to_finetuned))
 
     def forward(self, inputs):
@@ -117,7 +119,7 @@ class AdaptiveSentimentClassifier:
         self.tokenizer = tokenizer
         self.source_encoder = source_encoder
         if classifier_checkpoint_path is not None:
-            self.classifier = classifier(classifier_checkpoint_path)
+            self.classifier = classifier(path_to_finetuned=classifier_checkpoint_path)
         else:
             self.classifier = classifier
         self.target_encoder = target_encoder
