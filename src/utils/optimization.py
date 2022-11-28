@@ -27,3 +27,15 @@ def layer_wise_learning_rate(
 def inverted_sigmoid(probabilities: torch.Tensor):
     logits = torch.log(probabilities / (1 - probabilities))
     return logits
+
+
+def to_cuda(tensor):
+    if torch.cuda.is_available():
+        tensor = tensor.cuda()
+    return tensor
+
+
+def get_log_prob_for_kl_div(probs: torch.Tensor):
+    probs_ext = torch.concat((probs, torch.ones(probs.shape) - probs), axis=1)
+    log_probs_ext = torch.log(probs_ext)
+    return log_probs_ext
