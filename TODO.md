@@ -1,22 +1,36 @@
 ### Tasks
+- [ ] Put all params to config
+    * If arguments not passed from CLI, take the defaults from config
 - [ ] Train the models
     * Use balanced datasets (in terms of source and labels) for the multitask
       learning?
-- [ ] Look for a lighter model
 - [ ] Think about main.py
     * What will be the main functionalities of the whole code?
     * Inference, bulk inference, train,...
     * Based on that define what and how will be exposed to the user - what will
       the user eventually call
-- [ ] API with inference
+
+##### Open questions
+- [ ] Separator between conversations in mails.txt?
+- [ ] Encoding of the mails.txt? Replace special chars for czech letters? Or just fix encoding somehow?
+- [ ] Distribution of the results - are these emails closed set, so should the results cover the whole range between 0 and 1? Or do we want "absolute" sentiment (most of the values would probably be somewhere around 0.5)? If the results are imput for next mode, it doesn't really matter.
+- [ ] What is the desired output? Answer with score? Any ID?
+- [ ] Inference time/requirements - how heavy can the final model be?
+- [ ] Interaction of the user with the tool - API? Bulk inderence? Adaptation on target data?
+
+#### On hold
+- [ ] API with inference for one email
+    * Agree first on how the output should look like
 - [ ] Preprocess the emails
+    * Wait for reply with additional info about the super messy file
 - [ ] Preprocess data
 	* How? Inspiration here https://is.muni.cz/th/n0lnb/Sentiment_Analysis_cz.pdf + other Czech papers dealing with sentiment analysis
-	* Do I really need big preprocessing if I am using BERT-like tokenizers?
 	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
-	* I need at least some kind of preprocessing for the emails
-- [ ] Put all params to config
+	* Do I really need big preprocessing if I am using BERT-like tokenizers? Well not really, I just need to preprocess the emails, but if I get cleaned email body, I am good to go with the tokenizers
 
+#### Done
+- [x] Look for a lighter model
+    * https://huggingface.co/Seznam/small-e-czech
 - [x] Adaptation method
     * Finish the method and follow the same structure as the finetuning - same
       input and output, saving the models
