@@ -96,7 +96,7 @@ def unzip_emails():
     the root of the specified folder and deletes empty subfolders.
     """
     if not _check_zip_file(paths.DATA_RAW_ZIP_EMAILS):
-        download_facebook()
+        logger.error(f"File {paths.DATA_RAW_ZIP_EMAILS} not found.")
 
     command = (
         "unzip -o " + paths.DATA_RAW_ZIP_EMAILS + " -d " + paths.DATA_RAW_DIR_EMAILS
