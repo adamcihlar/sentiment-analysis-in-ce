@@ -794,4 +794,14 @@ class AdaptiveSentimentClassifier:
 
 
 if __name__ == "__main__":
+
+    from transformers import ElectraForPreTraining, ElectraTokenizerFast, ElectraModel
+    import torch
+
+    tokenizer = ElectraTokenizerFast.from_pretrained("Seznam/small-e-czech")
+    tok = tokenizer("Daniel Štancl mi tímto modelem udělal velkou radost")
+    tokenizer.convert_ids_to_tokens(tok["input_ids"])
+    tokenizer.vocab_size
+    model = ElectraForPreTraining.from_pretrained("Seznam/small-e-czech")
+    model = ElectraModel.from_pretrained("Seznam/small-e-czech")
     pass
