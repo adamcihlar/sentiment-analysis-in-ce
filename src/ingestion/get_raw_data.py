@@ -90,6 +90,33 @@ def unzip_mall():
     pass
 
 
+def unzip_emails():
+    """
+    Unzip emails to separate folder, moves all the extracted files to
+    the root of the specified folder and deletes empty subfolders.
+    """
+    if not _check_zip_file(paths.DATA_RAW_ZIP_EMAILS):
+        download_facebook()
+
+    command = (
+        "unzip -o " + paths.DATA_RAW_ZIP_EMAILS + " -d " + paths.DATA_RAW_DIR_EMAILS
+    )
+    run = subprocess.run(command, shell=True)
+    if run.returncode == 0:
+        logger.info(
+            f"Successfully unzipped emails dataset from {paths.DATA_RAW_ZIP_EMAILS}."
+        )
+        for path, subdirs, files in os.walk(paths.DATA_RAW_DIR_EMAILS):
+            for f in files:
+                os.rename(
+                    os.path.join(path, f), os.path.join(paths.DATA_RAW_DIR_EMAILS, f)
+                )
+    subprocess.run(
+        f"find {paths.DATA_RAW_DIR_EMAILS} -type d -empty -delete", shell=True
+    )
+    pass
+
+
 def main(datasets: List = []):
     if datasets == []:
         unzip_facebook()

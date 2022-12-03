@@ -11,10 +11,12 @@ DATA_RAW = os.path.join(DATA, "raw")
 DATA_RAW_ZIP_FACEBOOK = os.path.join(DATA_RAW, "facebook.zip")
 DATA_RAW_ZIP_CSFD = os.path.join(DATA_RAW, "csfd.zip")
 DATA_RAW_ZIP_MALL = os.path.join(DATA_RAW, "mall.zip")
+DATA_RAW_ZIP_EMAILS = os.path.join(DATA_RAW, "mails.zip")
 
 DATA_RAW_DIR_FACEBOOK = os.path.join(DATA_RAW, "facebook")
 DATA_RAW_DIR_CSFD = os.path.join(DATA_RAW, "csfd")
 DATA_RAW_DIR_MALL = os.path.join(DATA_RAW, "mall")
+DATA_RAW_DIR_EMAILS = os.path.join(DATA_RAW, "mails")
 
 # PROCESSED
 DATA_PROCESSED = os.path.join(DATA, "preprocessed")
