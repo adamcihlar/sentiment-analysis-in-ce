@@ -148,7 +148,7 @@ class ClassificationDataset:
         self.X_tok = tokenizer.tokenize(
             list(self.X_preprocessed),
             max_length=max_length,
-            truncation=truncation,
+            combined_truncation=truncation,
         )
         pass
 
