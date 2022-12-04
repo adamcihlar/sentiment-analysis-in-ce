@@ -30,6 +30,7 @@ from src.model.encoders import Encoder
 from src.utils.text_preprocessing import Preprocessor
 from src.model.tokenizers import Tokenizer
 from src.config import paths
+from src.config.parameters import ClassifierParams
 
 
 class ClassificationHead(torch.nn.Module):
@@ -44,8 +45,8 @@ class ClassificationHead(torch.nn.Module):
 
     def __init__(
         self,
-        input_size=768,
-        hidden_size=768,
+        input_size=ClassifierParams.INPUT_SIZE,
+        hidden_size=ClassifierParams.HIDDEN_SIZE,
         num_classes=1,
         dropout=0.1,
         model=None,
@@ -58,9 +59,14 @@ class ClassificationHead(torch.nn.Module):
             self.model = torch.nn.Sequential(
                 torch.nn.Sequential(
                     torch.nn.Dropout(dropout),
+                    torch.nn.Linear(input_size, hidden_size),
+                    torch.nn.Tanh(),
+                ),
+                torch.nn.Sequential(
+                    torch.nn.Dropout(dropout),
                     torch.nn.Linear(hidden_size, num_classes),
                     torch.nn.Sigmoid(),
-                )
+                ),
             )
         if path_to_finetuned is not None:
             logger.info(
@@ -795,13 +801,54 @@ class AdaptiveSentimentClassifier:
 
 if __name__ == "__main__":
 
-    from transformers import ElectraForPreTraining, ElectraTokenizerFast, ElectraModel
+    from transformers import (
+        ElectraTokenizerFast,
+        ElectraModel,
+        AutoModel,
+        AutoModelForSequenceClassification,
+        RobertaModel,
+    )
     import torch
 
     tokenizer = ElectraTokenizerFast.from_pretrained("Seznam/small-e-czech")
-    tok = tokenizer("Daniel Štancl mi tímto modelem udělal velkou radost")
-    tokenizer.convert_ids_to_tokens(tok["input_ids"])
-    tokenizer.vocab_size
-    model = ElectraForPreTraining.from_pretrained("Seznam/small-e-czech")
     model = ElectraModel.from_pretrained("Seznam/small-e-czech")
+    electra = AutoModel.from_pretrained("Seznam/small-e-czech")
+    model = AutoModelForSequenceClassification.from_pretrained("Seznam/small-e-czech")
+    model = AutoModelForSequenceClassification.from_pretrained("ufal/robeczech-base")
+    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased")
+    roberta = AutoModel.from_pretrained("ufal/robeczech-base")
+    roberta = RobertaModel.from_pretrained(
+        "ufal/robeczech-base", output_hidden_states=True
+    )
+    bert = AutoModel.from_pretrained("bert-base-uncased")
+    model.eval()
+    model = roberta
+
+    dir(model)
+    model.encoder.layer[0]
+
+    tok = tokenizer(
+        ["Daniel Štancl mi tímto modelem udělal velkou radost", "necum"],
+        padding="max_length",
+        max_length=512,
+    )
+    tok = {k: torch.tensor(tok[k]) for k in tok}
+    out = model(**tok)
+    out[0][:, 0, :].shape
+    out[1].shape
+    out[0][:, 0, :]
+    out[1]
+    out.keys()
+    dir(out)
+    out.hidden_states[12] == out.last_hidden_state
+    out.last_hidden_state.shape
+    out.last_hidden_state[:, 0]
+    out.last_hidden_state
+    out[0].shape
+    out[0][:, 0]
+    out[0][:, 0, :]
+    dir(out)
+    out.last_hidden_state.shape
+    out.values()
+
     pass

@@ -3,7 +3,7 @@ from django.utils.text import slugify
 from transformers import RobertaModel
 import torch
 
-from src.config.parameters import ENCODER_MODEL
+from src.config.parameters import EncoderParams
 
 
 class Encoder(torch.nn.Module):
@@ -12,7 +12,7 @@ class Encoder(torch.nn.Module):
     Simplification of the forward method to output only the embeddings.
     """
 
-    def __init__(self, model_name=ENCODER_MODEL, path_to_finetuned=None):
+    def __init__(self, model_name=EncoderParams.MODEL, path_to_finetuned=None):
         super(Encoder, self).__init__()
         self.encoder = RobertaModel.from_pretrained(model_name)
         self.name = slugify(model_name)

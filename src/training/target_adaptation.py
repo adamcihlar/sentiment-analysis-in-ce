@@ -2,6 +2,7 @@ from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
 
 from src.config import paths
+from src.config.parameters import AdaptationOptimizationParams
 from src.reading.readers import (
     read_csfd,
     read_finetuning_source,
@@ -48,12 +49,12 @@ if __name__ == "__main__":
         source_val,
         target,
         optimizer=AdamW,
-        optimizer_params={"lr": 2e-5, "betas": (0.9, 0.999)},
-        lr_decay=0.9,
+        optimizer_params=AdaptationOptimizationParams.OPTIMIZATION,
+        lr_decay=AdaptationOptimizationParams.LR_DECAY,
         lr_scheduler_call=get_linear_schedule_with_warmup,
-        warmup_steps_proportion=0.1,
-        num_epochs=4,
-        temperature=2,
-        loss_combination_params=(0.5, 0.5),
+        warmup_steps_proportion=AdaptationOptimizationParams.WARM_UP_STEPS_PROPORTION,
+        num_epochs=AdaptationOptimizationParams.NUM_EPOCHS,
+        temperature=AdaptationOptimizationParams.TEMPERATURE,
+        loss_combination_params=AdaptationOptimizationParams.LOSS_COMBINATION_PARAMS,
         metrics=["f1", "accuracy", "precision", "recall"],
     )

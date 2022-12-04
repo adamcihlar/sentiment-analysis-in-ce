@@ -4,7 +4,7 @@ from typing import List
 from sklearn.model_selection import train_test_split
 from loguru import logger
 
-from src.config.parameters import RANDOM_STATE
+from src.config.parameters import RANDOM_STATE, TokenizerParams
 
 
 def drop_undefined_classes(dataset: pd.DataFrame):
@@ -136,7 +136,11 @@ class ClassificationDataset:
         pass
 
     def tokenize(
-        self, tokenizer, padding="max_length", max_length=512, truncation=True
+        self,
+        tokenizer,
+        padding="max_length",
+        max_length=TokenizerParams.MAX_LENGTH,
+        truncation=TokenizerParams.COMBINED_TRUNCATION,
     ):
         """
         Returns tokenized inputs and stores them at the same time.
@@ -144,6 +148,7 @@ class ClassificationDataset:
         self.X_tok = tokenizer.tokenize(
             list(self.X_preprocessed),
             max_length=max_length,
+            truncation=truncation,
         )
         pass
 
