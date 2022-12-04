@@ -30,7 +30,7 @@ from src.model.encoders import Encoder
 from src.utils.text_preprocessing import Preprocessor
 from src.model.tokenizers import Tokenizer
 from src.config import paths
-from src.config.parameters import ClassifierParams
+from src.config.parameters import ClassifierParams, DiscriminatorParams
 
 
 class ClassificationHead(torch.nn.Module):
