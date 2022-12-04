@@ -1,6 +1,6 @@
 from loguru import logger
 from django.utils.text import slugify
-from transformers import RobertaModel
+from transformers import AutoModel
 import torch
 
 from src.config.parameters import EncoderParams
@@ -14,7 +14,7 @@ class Encoder(torch.nn.Module):
 
     def __init__(self, model_name=EncoderParams.MODEL, path_to_finetuned=None):
         super(Encoder, self).__init__()
-        self.encoder = RobertaModel.from_pretrained(model_name)
+        self.encoder = AutoModel.from_pretrained(model_name)
         self.name = slugify(model_name)
         if path_to_finetuned is not None:
             logger.info(

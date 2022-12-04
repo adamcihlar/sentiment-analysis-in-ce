@@ -8,7 +8,7 @@ FINETUNED_DATASET = "mall"
 # TOKENIZER parameters
 class TokenizerParams:
     # TOKENIZER_MODEL = "ufal/robeczech-base"
-    TOKENIZER_MODEL = "Seznam/small-e-czech"
+    MODEL = "Seznam/small-e-czech"
     MAX_LENGTH = 512
     COMBINED_TRUNCATION = True
 

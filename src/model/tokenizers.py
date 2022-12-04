@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer
 from typing import List, Tuple
 
-from src.config.parameters import TOKENIZER_MODEL
+from src.config.parameters import TokenizerParams
 
 
 class Tokenizer:
@@ -10,7 +10,7 @@ class Tokenizer:
     can be passed to the ClassificationDataset's tokenize method.
     """
 
-    def __init__(self, tokenizer=TOKENIZER_MODEL):
+    def __init__(self, tokenizer=TokenizerParams.MODEL):
         self.model = AutoTokenizer.from_pretrained(tokenizer)
 
     def __truncate_tokenized_sequence__(self, tok: Tuple):
