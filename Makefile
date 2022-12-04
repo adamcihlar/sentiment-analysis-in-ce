@@ -52,6 +52,10 @@ clean_finetuning:
 	sudo rm -r -i output/models/finetuned
 	sudo rm -r -i output/train_info/finetuning
 
+clean_adaptation:
+	sudo rm -r -i output/models/adapted
+	sudo rm -r -i output/train_info/adapted
+
 # run solution
 run_api: docker_build_api
 	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_api /bin/bash
