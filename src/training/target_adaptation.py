@@ -20,7 +20,7 @@ from src.model.classifiers import (
 
 if __name__ == "__main__":
     source_train_df, source_val_df = read_finetuning_source()
-    target_df = read_csfd().sample(10)
+    target_df = read_csfd().sample(100)
 
     asc = AdaptiveSentimentClassifier(
         Preprocessor(),

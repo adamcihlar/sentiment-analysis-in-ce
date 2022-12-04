@@ -1,7 +1,8 @@
 RANDOM_STATE = 42
 
 # Common model params
-FINETUNED_CHECKPOINT = "ufalrobeczech-base_20221127-171131"
+FINETUNED_CHECKPOINT = "seznamsmall-e-czech_20221204-114732"
+
 FINETUNED_EPOCH = 3
 FINETUNED_DATASET = "mall"
 

@@ -32,7 +32,7 @@ if __name__ == "__main__":
         drop_neutral=True,
         preprocessor=asc.preprocessor,
         tokenizer=asc.tokenizer,
-        batch_size=8,  # DataLoaderParams.BATCH_SIZE
+        batch_size=64,  # DataLoaderParams.BATCH_SIZE
         shuffle=True,  # DataLoaderParams.SHUFFLE
         num_workers=0,  # DataLoaderParams.NUM_WORKERS
     )
@@ -45,6 +45,6 @@ if __name__ == "__main__":
         lr_decay=FinetuningOptimizationParams.LR_DECAY,
         lr_scheduler_call=get_linear_schedule_with_warmup,
         warmup_steps_proportion=FinetuningOptimizationParams.WARM_UP_STEPS_PROPORTION,
-        num_epochs=FinetuningOptimizationParams.NUM_EPOCHS
+        num_epochs=FinetuningOptimizationParams.NUM_EPOCHS,
         metrics=["f1", "accuracy", "precision", "recall"],
     )
