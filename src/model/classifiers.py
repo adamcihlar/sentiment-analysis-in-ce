@@ -309,6 +309,7 @@ class AdaptiveSentimentClassifier:
                     mean_loss = np.mean(np.array(loss_progress))
                     print("Training loss:", mean_loss)
                     loss_progress = []
+                counter += 1
 
             # validation
             encoder.eval()

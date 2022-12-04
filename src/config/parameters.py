@@ -22,7 +22,7 @@ class TokenizerParams:
 
 # DATALOADER parameters
 class DataLoaderParams:
-    BATCH_SIZE = 64
+    BATCH_SIZE = 24
     SHUFFLE = True
     NUM_WORKERS = 0
 
