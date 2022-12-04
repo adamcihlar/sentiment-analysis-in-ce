@@ -56,7 +56,7 @@ class ClassificationHead(torch.nn.Module):
                 torch.nn.Sequential(
                     torch.nn.Dropout(dropout),
                     torch.nn.Linear(input_size, hidden_size),
-                    torch.nn.Tanh(),
+                    torch.nn.ReLU(),
                 ),
                 torch.nn.Sequential(
                     torch.nn.Dropout(dropout),
