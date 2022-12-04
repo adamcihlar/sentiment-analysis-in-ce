@@ -11,10 +11,6 @@ from loguru import logger
 import numpy as np
 import pandas as pd
 import torch
-from transformers import (
-    RobertaTokenizer,
-    RobertaModel,
-)
 from torch.utils.data import DataLoader
 from evaluate import load
 
