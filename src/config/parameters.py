@@ -38,6 +38,12 @@ class ClassifierParams:
     HIDDEN_SIZE = 256
 
 
+# DISCRIMINATOR parameters
+class DiscriminatorParams:
+    INPUT_SIZE = 256
+    HIDDEN_SIZE = 1024
+
+
 # OPTIMIZATION parameters
 class FinetuningOptimizationParams:
     OPTIMIZATION = {"lr": 2e-5, "betas": (0.9, 0.999)}

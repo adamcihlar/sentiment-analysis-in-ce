@@ -89,7 +89,12 @@ class Discriminator(torch.nn.Module):
     """
 
     def __init__(
-        self, input_size=768, hidden_size=3072, num_classes=1, dropout=0.0, model=None
+        self,
+        input_size=DiscriminatorParams.INPUT_SIZE,
+        hidden_size=DiscriminatorParams.HIDDEN_SIZE,
+        num_classes=1,
+        dropout=0.0,
+        model=None,
     ):
         super(Discriminator, self).__init__()
         if model is not None:
