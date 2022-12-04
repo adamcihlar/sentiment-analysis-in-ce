@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import torch
 from typing import List
@@ -29,6 +30,19 @@ def transform_labels_to_probs(dataset, drop_neutral=True):
         )
         dataset.label.loc[dataset.label == 2] = 0.5
     return dataset
+
+
+def random_undersampling(dataset, majority_ratio=1, random_state=42):
+    label_counts = dataset.label.value_counts()
+    minor_samples_count = np.min(label_counts)
+    minor_class = label_counts.index.values[np.argmin(label_counts)]
+    major_samples_count = minor_samples_count * majority_ratio
+    sampled_majority = dataset.loc[dataset.label != minor_class].sample(
+        major_samples_count, replace=False, random_state=random_state
+    )
+    minority = dataset.loc[dataset.label == minor_class]
+    balanced_dataset = pd.concat([minority, sampled_majority])
+    return balanced_dataset
 
 
 def get_finetuning_datasets(source_dataset: pd.DataFrame):
@@ -185,6 +199,8 @@ class ClassificationDataset:
 def get_datasets_ready_for_finetuning(
     datasets: List[pd.DataFrame],
     drop_neutral,
+    balance_data,
+    majority_ratio,
     preprocessor,
     tokenizer,
     batch_size,
@@ -203,6 +219,11 @@ def get_datasets_ready_for_finetuning(
     datasets = [
         transform_labels_to_probs(ds, drop_neutral=drop_neutral) for ds in datasets
     ]
+    if balance_data:
+        datasets = [
+            random_undersampling(ds, majority_ratio, RANDOM_STATE) for ds in datasets
+        ]
+
     datasets = [get_finetuning_datasets(ds) for ds in datasets]
     train_datasets, val_datasets = list(zip(*datasets))
 
@@ -233,6 +254,18 @@ def get_datasets_ready_for_finetuning(
             batch_size=batch_size, shuffle=False, num_workers=num_workers
         )
         for ds in val_datasets.values()
+    ]
+    [
+        logger.info(
+            f"Resulting train dataset {ds_name} has {len(train_datasets[ds_name].X)} rows and classes in ratio {majority_ratio}:1."
+        )
+        for ds_name in train_datasets
+    ]
+    [
+        logger.info(
+            f"Resulting train dataset {ds_name} has {len(val_datasets[ds_name].X)} rows and classes in ratio {majority_ratio}:1."
+        )
+        for ds_name in val_datasets
     ]
     return train_datasets, val_datasets
 

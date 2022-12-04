@@ -6,6 +6,12 @@ FINETUNED_CHECKPOINT = "seznamsmall-e-czech_20221204-114732"
 FINETUNED_EPOCH = 3
 FINETUNED_DATASET = "mall"
 
+# DATASET parameters
+class DatasetParams:
+    BALANCE_DATA = True
+    MAJORITY_RATIO = 1
+
+
 # TOKENIZER parameters
 class TokenizerParams:
     # TOKENIZER_MODEL = "ufal/robeczech-base"
