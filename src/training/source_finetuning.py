@@ -14,8 +14,8 @@ from src.model.classifiers import (
 )
 
 if __name__ == "__main__":
-    source_mall = read_mall().sample(100)
-    source_facebook = read_facebook().sample(100)
+    source_mall = read_mall().sample(2000)
+    source_facebook = read_facebook().sample(2000)
     datasets = [source_facebook, source_mall]
 
     asc = AdaptiveSentimentClassifier(
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         drop_neutral=True,
         preprocessor=asc.preprocessor,
         tokenizer=asc.tokenizer,
-        batch_size=64,  # DataLoaderParams.BATCH_SIZE
+        batch_size=24,  # DataLoaderParams.BATCH_SIZE
         shuffle=True,  # DataLoaderParams.SHUFFLE
         num_workers=0,  # DataLoaderParams.NUM_WORKERS
     )
