@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import pandas as pd
 import torch
@@ -86,9 +87,14 @@ def get_adaptation_datasets(
             - this dataset is train and test at the same time, just (of course) using different labels
     """
     replace_samples = len(target_df) > len(source_train_df)
-    adaptation_source_train = source_train_df.sample(
-        len(target_df), replace=replace_samples
+    # take same amount of positive and negative samples from the source train
+    train_negative = source_train_df.loc[source_train_df.label == 0].sample(
+        math.ceil(len(target_df) / 2), replace=replace_samples
     )
+    train_positive = source_train_df.loc[source_train_df.label == 1].sample(
+        math.floor(len(target_df) / 2), replace=replace_samples
+    )
+    adaptation_source_train = pd.concat([train_negative, train_positive], axis=0)
     adaptation_source_val = source_val_df
     adaptation_target = target_df
     return adaptation_source_train, adaptation_source_val, adaptation_target
