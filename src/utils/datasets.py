@@ -187,8 +187,10 @@ class ClassificationDataset:
             predictions = pd.DataFrame({"y_pred": self.y_pred})
         return predictions
 
-    def save_predictions(self):
-        raise NotImplementedError
+    def save_predictions(self, save_path):
+        df = pd.DataFrame({"text": self.X, "label": self.y, "label_pred": self.y_pred})
+        df.to_csv(save_path)
+        pass
 
     def save_data(self, save_path):
         df = pd.DataFrame({"text": self.X, "label": self.y, "source": self.source})
