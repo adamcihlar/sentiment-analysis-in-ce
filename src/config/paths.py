@@ -69,6 +69,10 @@ OUTPUT_MODELS_ADAPTED_ENCODER = os.path.join(OUTPUT_MODELS_ADAPTED, "encoder")
 OUTPUT_MODELS_ADAPTED_DISCRIMINATOR = os.path.join(
     OUTPUT_MODELS_ADAPTED, "discriminator"
 )
+OUTPUT_MODELS_ADAPTED_ENCODER_FINAL = os.path.join(
+    OUTPUT_MODELS_ADAPTED_ENCODER,
+    "_".join([parameters.ADAPTED_CHECKPOINT, str(parameters.ADAPTED_EPOCH)]),
+)
 
 # TRAIN INFO
 OUTPUT_INFO = os.path.join(OUTPUT, "train_info")
