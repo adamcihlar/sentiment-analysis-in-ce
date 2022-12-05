@@ -14,7 +14,7 @@ import torch
 from torch.utils.data import DataLoader
 from evaluate import load
 
-from src.utils.datasets import Dataset
+from src.utils.datasets import ClassificationDataset
 from src.utils.optimization import (
     layer_wise_learning_rate,
     inverted_sigmoid,
@@ -127,17 +127,22 @@ class AdaptiveSentimentClassifier:
         discriminator,
         target_encoder,
         classifier_checkpoint_path=None,
+        inference_mode=False,
     ):
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
-        self.source_encoder = source_encoder
+        if inference_mode:
+            self.source_encoder = None
+            self.name = self.target_encoder.name
+        else:
+            self.source_encoder = source_encoder
+            self.discriminator = discriminator
+            self.name = self.source_encoder.name
         if classifier_checkpoint_path is not None:
             self.classifier = classifier(path_to_finetuned=classifier_checkpoint_path)
         else:
             self.classifier = classifier
         self.target_encoder = target_encoder
-        self.discriminator = discriminator
-        self.name = self.source_encoder.name
 
     def finetune(
         self,
@@ -257,7 +262,7 @@ class AdaptiveSentimentClassifier:
 
         # display training progress
         progress_bar = tqdm(range(num_training_steps))
-        counter = 0
+        counter = 1
         display_loss_after_iters = math.ceil(
             sum(num_steps_per_epoch_per_dataloader.values()) / 100
         )
@@ -799,6 +804,49 @@ class AdaptiveSentimentClassifier:
         with open(info_save_path, "w+") as fp:
             json.dump(train_batch_loss_dict, fp)
         pass
+
+    def predict(self, texts: List[str], predict_probs=True, temperature=1):
+        self.target_encoder.eval()
+        self.classifier.eval()
+        device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+        preprocessed_texts = self.preprocessor.preprocess(texts)
+        X_tok = self.tokenizer.tokenize(texts)
+        X_tok = {k: torch.tensor(v).to(device) for k, v in X_tok.items()}
+        with torch.no_grad():
+            features = self.target_encoder(**X_tok)
+            pred = self.classifier(features)
+
+        if temperature != 1:
+            pred = torch.sigmoid(inverted_sigmoid(pred) / temperature)
+
+        if not predict_probs:
+            pred = torch.round(pred)
+
+        pred = pred.flatten().tolist()
+        return pred
+
+    def bulk_predict(
+        self, dataset: Type[ClassificationDataset], predict_probs=True, temperature=1
+    ):
+        device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+        preds = []
+        for batch in dataset.torch_dataloader:
+            batch = {k: v.to(device) for k, v in batch.items()}
+            with torch.no_grad():
+                features = self.target_encoder(**batch)
+                pred = self.classifier(features)
+            if temperature != 1:
+                pred = torch.sigmoid(inverted_sigmoid(pred) / temperature)
+            if not predict_probs:
+                pred = torch.round(pred)
+            pred = pred.flatten().tolist()
+            preds += pred
+        dataset.y_pred = preds
+        return preds
 
 
 if __name__ == "__main__":
