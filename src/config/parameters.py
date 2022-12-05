@@ -1,10 +1,11 @@
 RANDOM_STATE = 42
 
 # Common model params
-FINETUNED_CHECKPOINT = "seznamsmall-e-czech_20221204-114732"
-
+FINETUNED_CHECKPOINT = "seznamsmall-e-czech_20221204-221123"
 FINETUNED_EPOCH = 3
 FINETUNED_DATASET = "mall"
+ADAPTED_CHECKPOINT = "seznamsmall-e-czech_20221204-221123"
+ADAPTED_EPOCH = 3
 
 # DATASET parameters
 class DatasetParams:
@@ -33,6 +34,8 @@ class EncoderParams:
     MODEL = "Seznam/small-e-czech"
     FINETUNED_CHECKPOINT = FINETUNED_CHECKPOINT
     FINETUNED_EPOCH = FINETUNED_EPOCH
+    ADAPTED_CHECKPOINT = ADAPTED_CHECKPOINT
+    ADAPTED_EPOCH = ADAPTED_EPOCH
 
 
 # CLASSIFIER parameters
@@ -64,4 +67,10 @@ class AdaptationOptimizationParams:
     WARM_UP_STEPS_PROPORTION = 0.1
     NUM_EPOCHS = 4
     TEMPERATURE = 2
-    LOSS_COMBINATION_PARAMS = (0.5, 0.5)
+    LOSS_COMBINATION_PARAMS = (0.8, 0.2)
+
+
+# INFERENCE parameters
+class InferenceParams:
+    PREDICT_PROBS = True
+    TEMPERATURE = 1
