@@ -1,4 +1,7 @@
 ### Tasks
+- [ ] Inference
+    * Predict method of the AdaptiveSentimentClassifier
+- [ ] Gradient clipping https://discuss.pytorch.org/t/check-the-norm-of-gradients/27961
 - [ ] Put all params to config
     * If arguments not passed from CLI, take the defaults from config
 - [ ] Train the models
