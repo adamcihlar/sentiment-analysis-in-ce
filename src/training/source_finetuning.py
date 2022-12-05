@@ -38,9 +38,9 @@ if __name__ == "__main__":
         majority_ratio=DatasetParams.MAJORITY_RATIO,
         preprocessor=asc.preprocessor,
         tokenizer=asc.tokenizer,
-        DataLoaderParams.BATCH_SIZE
-        DataLoaderParams.SHUFFLE
-        DataLoaderParams.NUM_WORKERS
+        batch_size=DataLoaderParams.BATCH_SIZE,
+        shuffle=DataLoaderParams.SHUFFLE,
+        num_workers=DataLoaderParams.NUM_WORKERS,
     )
 
     asc.finetune(
