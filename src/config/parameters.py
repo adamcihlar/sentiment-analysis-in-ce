@@ -59,6 +59,8 @@ class FinetuningOptimizationParams:
     LR_DECAY = 0.95
     WARM_UP_STEPS_PROPORTION = 0.1
     NUM_EPOCHS = 4
+    VALIDATION = False
+    MIN_QUERY_LEN = 5
 
 
 class AdaptationOptimizationParams:
@@ -68,6 +70,7 @@ class AdaptationOptimizationParams:
     NUM_EPOCHS = 4
     TEMPERATURE = 2
     LOSS_COMBINATION_PARAMS = (0.8, 0.2)
+    VALIDATION = False
 
 
 # INFERENCE parameters
