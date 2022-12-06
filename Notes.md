@@ -12,5 +12,5 @@
 and restart the docker using: sudo systemctl restart docker
 https://mlohr.com/docker-mtu/
 
-	
-
+### Docker
+* Because of wsl I need to start the docker deamon first with: sudo dockerd
