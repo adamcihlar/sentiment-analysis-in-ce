@@ -46,6 +46,11 @@ def random_undersampling(dataset, majority_ratio=1, random_state=42):
     return balanced_dataset
 
 
+def filter_min_query_len(dataset, min_query_len):
+    mask = dataset.text.str.findall(r"[\w]+").str.len() >= min_query_len
+    return dataset.loc[mask]
+
+
 def get_finetuning_datasets(source_dataset: pd.DataFrame):
     """
     Getting the dataset for finetuning is not dependant on the target dataset.
@@ -214,6 +219,8 @@ def get_datasets_ready_for_finetuning(
     batch_size,
     shuffle,
     num_workers,
+    skip_validation,
+    min_query_len,
 ):
     """
     Just wrapping many functions and methods that are common for preparing
@@ -234,6 +241,11 @@ def get_datasets_ready_for_finetuning(
 
     datasets = [get_finetuning_datasets(ds) for ds in datasets]
     train_datasets, val_datasets = list(zip(*datasets))
+
+    if skip_validation:
+        val_datasets = [ds.iloc[0] for ds in val_datasets]
+
+    train_datasets = [filter_min_query_len(ds, min_query_len) for ds in train_datasets]
 
     train_datasets = {
         ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
@@ -288,6 +300,7 @@ def get_datasets_ready_for_adaptation(
     batch_size,
     shuffle,
     num_workers,
+    skip_validation,
 ):
     if target_df.label is not None:
         target_df = drop_undefined_classes(target_df)
@@ -300,6 +313,9 @@ def get_datasets_ready_for_adaptation(
     source_train = ClassificationDataset(
         source_train_df.text, source_train_df.label, source_train_df.source
     )
+
+    if skip_validation:
+        source_val = souce_val.iloc[0]
     source_val = ClassificationDataset(
         source_val_df.text, source_val_df.label, source_val_df.source
     )

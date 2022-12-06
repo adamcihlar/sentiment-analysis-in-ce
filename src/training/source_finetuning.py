@@ -20,6 +20,7 @@ from src.model.classifiers import (
 if __name__ == "__main__":
     source_mall = read_mall()
     source_facebook = read_facebook()
+    # source_csfd = read_csfd()
     datasets = [source_facebook, source_mall]
 
     asc = AdaptiveSentimentClassifier(
@@ -41,6 +42,8 @@ if __name__ == "__main__":
         batch_size=DataLoaderParams.BATCH_SIZE,
         shuffle=DataLoaderParams.SHUFFLE,
         num_workers=DataLoaderParams.NUM_WORKERS,
+        validation=FinetuningOptimizationParams.SKIP_VALIDATION,
+        min_query_len=FinetuningOptimizationParams.MIN_QUERY_LEN,
     )
 
     asc.finetune(
@@ -51,6 +54,7 @@ if __name__ == "__main__":
         lr_decay=FinetuningOptimizationParams.LR_DECAY,
         lr_scheduler_call=get_linear_schedule_with_warmup,
         warmup_steps_proportion=FinetuningOptimizationParams.WARM_UP_STEPS_PROPORTION,
-        num_epochs=FinetuningOptimizationParams.NUM_EPOCHS,
+        # num_epochs=FinetuningOptimizationParams.NUM_EPOCHS,
+        num_epochs=6,
         metrics=["f1", "accuracy", "precision", "recall"],
     )
