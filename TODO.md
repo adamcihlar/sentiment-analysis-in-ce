@@ -1,4 +1,10 @@
 ### Tasks
+* **Main streams**
+- [ ] Finetuning on all three datasets - resources?
+- [ ] Showcase the work to Stepan
+- [ ] Preprocessing of the emails
+
+- [ ] To be able to skip the validation, I need to save the validation datasets first to evaluate the models on them later
 - [ ] Inference
     * Predict method of the AdaptiveSentimentClassifier
 - [ ] Gradient clipping https://discuss.pytorch.org/t/check-the-norm-of-gradients/27961
