@@ -42,7 +42,7 @@ if __name__ == "__main__":
         batch_size=16,
         shuffle=True,
         num_workers=0,
-        validation=paths.AdaptationOptimizationParams.SKIP_VALIDATION,
+        skip_validation=paths.AdaptationOptimizationParams.SKIP_VALIDATION,
     )
 
     asc.adapt(
