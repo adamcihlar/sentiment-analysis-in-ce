@@ -60,7 +60,7 @@ class FinetuningOptimizationParams:
     WARM_UP_STEPS_PROPORTION = 0.1
     NUM_EPOCHS = 6
     SKIP_VALIDATION = False
-    MIN_QUERY_LEN = 10
+    MIN_QUERY_LEN = 1
 
 
 class AdaptationOptimizationParams:
