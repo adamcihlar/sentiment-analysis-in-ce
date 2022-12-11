@@ -68,7 +68,7 @@ app:
 	python -m src.app.app
 
 run_app: docker_build_app
-	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_app /bin/bash
+	docker run --rm -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_app
 
 run_api: docker_build_api
 	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_api /bin/bash
