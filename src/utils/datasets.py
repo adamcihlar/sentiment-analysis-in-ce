@@ -1,12 +1,14 @@
 import math
+from typing import List
+
 import numpy as np
 import pandas as pd
 import torch
-from typing import List
-from sklearn.model_selection import train_test_split
 from loguru import logger
-
+from sklearn.model_selection import train_test_split
+from src.config import paths
 from src.config.parameters import RANDOM_STATE, TokenizerParams
+from src.reading.readers import read_finetuning_train_val
 
 
 def drop_undefined_classes(dataset: pd.DataFrame):
@@ -54,7 +56,8 @@ def filter_min_query_len(dataset, min_query_len):
 def get_finetuning_datasets(source_dataset: pd.DataFrame):
     """
     Getting the dataset for finetuning is not dependant on the target dataset.
-    Basically just splits the source dataset to train and val.
+    Basically just splits the source dataset to train and val and saves the
+    splits.
     """
     source_train_X, source_val_X, source_train_y, source_val_y = train_test_split(
         source_dataset.loc[:, source_dataset.columns != "label"],
@@ -64,6 +67,18 @@ def get_finetuning_datasets(source_dataset: pd.DataFrame):
     )
     source_train = pd.concat([source_train_X, source_train_y], axis=1)
     source_val = pd.concat([source_val_X, source_val_y], axis=1)
+    train_path = os.path.join(
+        paths.DATA_FINAL_FINETUNING_TRAIN,
+        source_train.source.iloc[0] + ".csv",
+    )
+    os.makedirs(os.path.split(train_path)[0], exist_ok=True)
+    val_path = os.path.join(
+        paths.DATA_FINAL_FINETUNING_VAL,
+        source_val.source.iloc[0] + ".csv",
+    )
+    os.makedirs(os.path.split(val_path)[0], exist_ok=True)
+    source_train.to_csv(train_path)
+    source_val.to_csv(val_path)
     return source_train, source_val
 
 
@@ -230,17 +245,31 @@ def get_datasets_ready_for_finetuning(
     instances from all of them with torch dataset and dataloader ready for
     training/evaluation.
     """
-    datasets = [drop_undefined_classes(ds) for ds in datasets]
-    datasets = [
-        transform_labels_to_probs(ds, drop_neutral=drop_neutral) for ds in datasets
-    ]
-    if balance_data:
-        datasets = [
-            random_undersampling(ds, majority_ratio, RANDOM_STATE) for ds in datasets
-        ]
+    # try to find the already created train and val datasets
+    datasets = [read_finetuning_train_val(ds) for ds in datasets]
+    # if you cannot find it, create a new split and save it
+    datasets = [get_finetuning_datasets(ds) if isinstance(ds, pd.DataFrame) else ds for ds in datasets]
 
-    datasets = [get_finetuning_datasets(ds) for ds in datasets]
+    # get trains and vals in lists
     train_datasets, val_datasets = list(zip(*datasets))
+
+    # do this for both train and val
+    train_datasets = [drop_undefined_classes(ds) for ds in train_datasets]
+    val_datasets = [drop_undefined_classes(ds) for ds in val_datasets]
+
+    # both
+    train_datasets = [
+        transform_labels_to_probs(ds, drop_neutral=drop_neutral) for ds in train_datasets
+    ]
+    val_datasets = [
+        transform_labels_to_probs(ds, drop_neutral=drop_neutral) for ds in val_datasets
+    ]
+
+    # only train
+    if balance_data:
+        train_datasets = [
+            random_undersampling(ds, majority_ratio, RANDOM_STATE) for ds in train_datasets
+        ]
 
     if skip_validation:
         val_datasets = [ds.iloc[0] for ds in val_datasets]
