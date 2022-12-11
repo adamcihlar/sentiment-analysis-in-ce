@@ -20,5 +20,5 @@ WORKDIR app
 # install libraries 
 RUN make install
 
-CMD "make app"
+CMD make app
 
