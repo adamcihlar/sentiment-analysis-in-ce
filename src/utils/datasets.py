@@ -270,6 +270,7 @@ def get_datasets_ready_for_finetuning(
         train_datasets = [
             random_undersampling(ds, majority_ratio, RANDOM_STATE) for ds in train_datasets
         ]
+        majority_ratio = 'N/A'
 
     if skip_validation:
         val_datasets = [ds.iloc[0] for ds in val_datasets]
@@ -312,7 +313,7 @@ def get_datasets_ready_for_finetuning(
     ]
     [
         logger.info(
-            f"Resulting train dataset {ds_name} has {len(val_datasets[ds_name].X)} rows and classes in ratio {majority_ratio}:1."
+            f"Resulting val dataset {ds_name} has {len(val_datasets[ds_name].X)} rows and classes in ratio {majority_ratio}:1."
         )
         for ds_name in val_datasets
     ]

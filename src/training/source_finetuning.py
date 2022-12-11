@@ -28,7 +28,7 @@ if __name__ == "__main__":
     train_datasets, val_datasets = get_datasets_ready_for_finetuning(
         datasets,
         drop_neutral=True,
-        balance_data=DatasetParams.BALANCE_DATA,
+        balance_data=False,
         majority_ratio=DatasetParams.MAJORITY_RATIO,
         preprocessor=asc.preprocessor,
         tokenizer=asc.tokenizer,
