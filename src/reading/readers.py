@@ -53,6 +53,7 @@ def read_finetuning_train_val(dataset: pd.DataFrame):
     if _check_file(train_path) and _check_file(val_path):
         train_ds = pd.read_csv(train_path, index_col=0)
         val_ds = pd.read_csv(val_path, index_col=0)
+        logger.info(f'Dataset {dataset_name} found at {train_path} and {val_path}.')
         return train_ds, val_ds
     else:
         return dataset
