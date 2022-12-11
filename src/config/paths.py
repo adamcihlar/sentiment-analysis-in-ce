@@ -84,3 +84,8 @@ OUTPUT_INFO = os.path.join(OUTPUT, "train_info")
 OUTPUT_INFO_FINETUNING = os.path.join(OUTPUT_INFO, "finetuning")
 # ADAPTATION
 OUTPUT_INFO_ADAPTATION = os.path.join(OUTPUT_INFO, "adaptation")
+
+# APP
+OUTPUT_PROD = os.path.join(OUTPUT, "prod")
+OUTPUT_PROD_ENCODER = os.path.join(OUTPUT_PROD, "encoder")
+OUTPUT_PROD_CLASSIFIER = os.path.join(OUTPUT_PROD, "classifier")

@@ -27,7 +27,7 @@ def main():
         paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL,
     )
 
-    @app.route("/form", methods=["POST", "GET"])
+    @app.route("/", methods=["POST", "GET"])
     def form():
         if request.method == "GET":
             return render_template("input.html")
