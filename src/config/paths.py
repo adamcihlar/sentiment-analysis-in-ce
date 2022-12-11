@@ -33,6 +33,9 @@ DATA_FINAL = os.path.join(DATA, "final")
 DATA_FINAL_SOURCE_TRAIN = os.path.join(DATA_FINAL, "source_train")
 DATA_FINAL_SOURCE_VAL = os.path.join(DATA_FINAL, "source_val")
 
+DATA_FINAL_FINETUNING_TRAIN = os.path.join(DATA_FINAL, "finetuning_train")
+DATA_FINAL_FINETUNING_VAL = os.path.join(DATA_FINAL, "finetuning_val")
+
 # OUTPUT
 OUTPUT = "output"
 
