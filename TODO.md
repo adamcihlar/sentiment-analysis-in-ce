@@ -4,6 +4,7 @@
 - [ ] Showcase the work to Stepan
 - [ ] Preprocessing of the emails
 
+* **Other**
 - [ ] If adaptation is performed on dataset with labels, I want to save the
   train and val spilts
 - [ ] To be able to skip the validation, I need to save the validation datasets first to evaluate the models on them later
