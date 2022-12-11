@@ -1,9 +1,8 @@
-import pandas as pd
 import os
-from loguru import logger
 
-from src.config import paths
-from src.config import parameters
+import pandas as pd
+from loguru import logger
+from src.config import parameters, paths
 
 
 def _check_file(path_to_file):
@@ -39,6 +38,24 @@ def read_all_source(path=paths.DATA_PROCESSED_CONCAT):
         df = pd.read_csv(path, index_col=0)
         return df
     return None
+
+
+def read_finetuning_train_val(dataset: pd.DataFrame):
+    dataset_name = dataset.source.iloc[0]
+    train_path = os.path.join(
+        paths.DATA_FINAL_FINETUNING_TRAIN,
+        dataset_name + ".csv",
+    )
+    val_path = os.path.join(
+        paths.DATA_FINAL_FINETUNING_VAL,
+        dataset_name + ".csv",
+    )
+    if _check_file(train_path) and _check_file(val_path):
+        train_ds = pd.read_csv(train_path, index_col=0)
+        val_ds = pd.read_csv(val_path, index_col=0)
+        return train_ds, val_ds
+    else:
+        return dataset
 
 
 def read_finetuning_source(
