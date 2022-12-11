@@ -1,5 +1,6 @@
 import math
 from typing import List
+import os
 
 import numpy as np
 import pandas as pd
@@ -248,7 +249,10 @@ def get_datasets_ready_for_finetuning(
     # try to find the already created train and val datasets
     datasets = [read_finetuning_train_val(ds) for ds in datasets]
     # if you cannot find it, create a new split and save it
-    datasets = [get_finetuning_datasets(ds) if isinstance(ds, pd.DataFrame) else ds for ds in datasets]
+    datasets = [
+        get_finetuning_datasets(ds) if isinstance(ds, pd.DataFrame) else ds
+        for ds in datasets
+    ]
 
     # get trains and vals in lists
     train_datasets, val_datasets = list(zip(*datasets))
@@ -259,7 +263,8 @@ def get_datasets_ready_for_finetuning(
 
     # both
     train_datasets = [
-        transform_labels_to_probs(ds, drop_neutral=drop_neutral) for ds in train_datasets
+        transform_labels_to_probs(ds, drop_neutral=drop_neutral)
+        for ds in train_datasets
     ]
     val_datasets = [
         transform_labels_to_probs(ds, drop_neutral=drop_neutral) for ds in val_datasets
@@ -268,9 +273,10 @@ def get_datasets_ready_for_finetuning(
     # only train
     if balance_data:
         train_datasets = [
-            random_undersampling(ds, majority_ratio, RANDOM_STATE) for ds in train_datasets
+            random_undersampling(ds, majority_ratio, RANDOM_STATE)
+            for ds in train_datasets
         ]
-        majority_ratio = 'N/A'
+        majority_ratio = "N/A"
 
     if skip_validation:
         val_datasets = [ds.iloc[0] for ds in val_datasets]
