@@ -68,7 +68,10 @@ class ClassificationHead(torch.nn.Module):
                 ),
                 torch.nn.Sequential(
                     torch.nn.Dropout(dropout),
-                    coral_pytorch.layers.CoralLayer(size_in=hidden_size, num_classes=num_classes)
+                    coral_pytorch.layers.CoralLayer(
+                        size_in=hidden_size, num_classes=num_classes
+                    ),
+                ),
             )
         if path_to_finetuned is not None:
             logger.info(
@@ -304,9 +307,7 @@ class AdaptiveSentimentClassifier:
                 features = encoder(**batch)
                 logits, probs = classifiers[source_ds].forward(features)
                 # backward pass
-                cls_loss = coral_loss(
-                    logits, levels.unsqueeze(1).to(torch.float32)
-                )
+                cls_loss = coral_loss(logits, levels.unsqueeze(1).to(torch.float32))
                 cls_loss.backward()
                 # optimize the corresponding classifier and encoder
                 cls_optimizers[source_ds].step()

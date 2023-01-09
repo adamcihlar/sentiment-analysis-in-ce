@@ -17,19 +17,19 @@ def drop_undefined_classes(dataset: pd.DataFrame):
     return dataset
 
 
-def transform_labels(dataset, transformation='ordinal_regression'):
+def transform_labels(dataset, transformation="ordinal_regression"):
     """
     Based on how I want to finetune the source classifier, I need to transform the labels.
     I can either drop the neutral class to have binary classification or make it 0.5 and finetune in distilationlike settings.
     """
-    if transformation='drop_neutral':
+    if transformation == "drop_neutral":
         sum_neutral = sum(dataset.label == 1)
         logger.info(
             f"Dropped neutral class - {sum_neutral} samples, data transformed to binary classification problem."
         )
         dataset = dataset.loc[dataset.label.isin([0, 2])]
         dataset.label.loc[dataset.label == 2] = 1
-    elif transformation='ordinal_regression':
+    elif transformation == "ordinal_regression":
         logger.info(
             f"Labels kept in order negative - neutral - positive to allow for ordinal regression."
         )
@@ -265,8 +265,7 @@ def get_datasets_ready_for_finetuning(
 
     # both
     train_datasets = [
-        transform_labels(ds, transformation=transformation)
-        for ds in train_datasets
+        transform_labels(ds, transformation=transformation) for ds in train_datasets
     ]
     val_datasets = [
         transform_labels(ds, transformation=transformation) for ds in val_datasets
