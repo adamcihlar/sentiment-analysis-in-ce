@@ -375,7 +375,7 @@ class AdaptiveSentimentClassifier:
                         val_metrics_progress[val_ds_name][val_metric].append(
                             val_metrics["f1"].compute(average=val_metric)[val_metric]
                         )
-                        for val_metric in val_metrics
+                        for val_metric in list(val_metrics_progress[val_ds_name].keys())
                     ]
 
             # compute average losses per epoch
