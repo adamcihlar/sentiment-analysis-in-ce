@@ -61,11 +61,11 @@ class ClassificationHead(torch.nn.Module):
                     torch.nn.Linear(input_size, hidden_size),
                     torch.nn.Tanh(),
                 ),
-                torch.nn.Sequential(
-                    torch.nn.Dropout(dropout),
-                    torch.nn.Linear(hidden_size, hidden_size),
-                    torch.nn.Tanh(),
-                ),
+                #                 torch.nn.Sequential(
+                #                     torch.nn.Dropout(dropout),
+                #                     torch.nn.Linear(hidden_size, hidden_size),
+                #                     torch.nn.Tanh(),
+                #                 ),
                 torch.nn.Sequential(
                     torch.nn.Dropout(dropout),
                     CoralLayer(size_in=hidden_size, num_classes=num_classes),
