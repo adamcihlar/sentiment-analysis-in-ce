@@ -17,7 +17,7 @@ def drop_undefined_classes(dataset: pd.DataFrame):
     return dataset
 
 
-def transform_labels(dataset, transformation='drop_neutral'):
+def transform_labels(dataset, transformation='ordinal_regression'):
     """
     Based on how I want to finetune the source classifier, I need to transform the labels.
     I can either drop the neutral class to have binary classification or make it 0.5 and finetune in distilationlike settings.
@@ -229,7 +229,7 @@ class ClassificationDataset:
 
 def get_datasets_ready_for_finetuning(
     datasets: List[pd.DataFrame],
-    drop_neutral,
+    transformation,
     balance_data,
     majority_ratio,
     preprocessor,
@@ -265,11 +265,11 @@ def get_datasets_ready_for_finetuning(
 
     # both
     train_datasets = [
-        transform_labels_to_one_hots(ds, drop_neutral=drop_neutral)
+        transform_labels(ds, transformation=transformation)
         for ds in train_datasets
     ]
     val_datasets = [
-        transform_labels_to_one_hots(ds, drop_neutral=drop_neutral) for ds in val_datasets
+        transform_labels(ds, transformation=transformation) for ds in val_datasets
     ]
 
     # only train
