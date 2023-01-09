@@ -271,7 +271,12 @@ class AdaptiveSentimentClassifier:
         encoder.to(device)
 
         # track training info
-        val_metrics = {metric: load(metric) for metric in metrics}
+        if self.classifier().num_classes <= 2:
+            val_metrics = {metric: load(metric) for metric in metrics}
+        else:
+            val_metrics = {
+                metric: load("f1") for metric in ["micro", "macro", "weighted"]
+            }
         val_metrics_progress = {ds: {} for ds in val_datasets}
         for ds in val_metrics_progress:
             if self.classifier().num_classes <= 2:
@@ -373,7 +378,7 @@ class AdaptiveSentimentClassifier:
                 else:
                     [
                         val_metrics_progress[val_ds_name][val_metric].append(
-                            val_metrics["f1"].compute(average=val_metric)["f1"]
+                            val_metrics[val_metric].compute(average=val_metric)["f1"]
                         )
                         for val_metric in list(val_metrics_progress[val_ds_name].keys())
                     ]
