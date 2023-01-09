@@ -81,7 +81,7 @@ class ClassificationHead(torch.nn.Module):
     def forward(self, inputs):
         logits = self.model(inputs)
         probs = torch.sigmoid(logits)
-        return outputs, probs
+        return logits, probs
 
 
 class Discriminator(torch.nn.Module):
