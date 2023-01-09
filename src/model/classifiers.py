@@ -153,6 +153,15 @@ class AdaptiveSentimentClassifier:
             self.classifier = classifier
         self.target_encoder = target_encoder
 
+    def probs_to_labels(probs):
+        ranks = probs >= 0.5
+        labels = torch.sum(ranks, 1)
+        return labels
+
+    def probs_to_scale(probs):
+        scale = torch.sum(probs, 1)
+        return scale
+
     def finetune(
         self,
         train_datasets: Dict,
@@ -276,8 +285,6 @@ class AdaptiveSentimentClassifier:
         display_loss_after_iters = math.ceil(
             sum(num_steps_per_epoch_per_dataloader.values()) / 100
         )
-        # define training loss
-        bce_loss = torch.nn.BCELoss()
 
         # training loop
         for epoch in range(num_epochs):
@@ -333,15 +340,16 @@ class AdaptiveSentimentClassifier:
             for val_ds_name in val_datasets:
                 for batch in val_datasets[val_ds_name].torch_dataloader:
                     batch = {k: v.to(device) for k, v in batch.items()}
+                    levels = levels_from_labelbatch(batch["labels"], num_classes).to(
+                        device
+                    )
                     with torch.no_grad():
                         features = encoder(**batch)
-                        probs = classifiers[val_ds_name].forward(features)
+                        logits, probs = classifiers[val_ds_name].forward(features)
 
-                    cls_loss = bce_loss(
-                        probs, batch["labels"].unsqueeze(1).to(torch.float32)
-                    )
+                    cls_loss = coral_loss(logits, levels)
                     val_epoch_loss_progress[val_ds_name].append(cls_loss.item())
-                    predictions = torch.round(probs)
+                    predictions = self.probs_to_labels(probs)
                     [
                         val_metrics[val_metric].add_batch(
                             predictions=predictions, references=batch["labels"]
