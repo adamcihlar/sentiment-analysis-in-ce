@@ -373,7 +373,7 @@ class AdaptiveSentimentClassifier:
                 else:
                     [
                         val_metrics_progress[val_ds_name][val_metric].append(
-                            val_metrics["f1"].compute(average=val_metric)[val_metric]
+                            val_metrics["f1"].compute(average=val_metric)["f1"]
                         )
                         for val_metric in list(val_metrics_progress[val_ds_name].keys())
                     ]
