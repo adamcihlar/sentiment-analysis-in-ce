@@ -11,9 +11,9 @@ from loguru import logger
 import numpy as np
 import pandas as pd
 import torch
-import coral_pytorch
 from torch.utils.data import DataLoader
 from evaluate import load
+from coral_pytorch.layers import CoralLayer
 from coral_pytorch.losses import coral_loss
 from coral_pytorch.dataset import levels_from_labelbatch
 
@@ -68,9 +68,7 @@ class ClassificationHead(torch.nn.Module):
                 ),
                 torch.nn.Sequential(
                     torch.nn.Dropout(dropout),
-                    coral_pytorch.layers.CoralLayer(
-                        size_in=hidden_size, num_classes=num_classes
-                    ),
+                    CoralLayer(size_in=hidden_size, num_classes=num_classes),
                 ),
             )
         if path_to_finetuned is not None:
