@@ -1,7 +1,13 @@
-from src.config.parameters import (DataLoaderParams, DatasetParams,
-                                   FinetuningOptimizationParams)
-from src.model.classifiers import (AdaptiveSentimentClassifier,
-                                   ClassificationHead, Discriminator)
+from src.config.parameters import (
+    DataLoaderParams,
+    DatasetParams,
+    FinetuningOptimizationParams,
+)
+from src.model.classifiers import (
+    AdaptiveSentimentClassifier,
+    ClassificationHead,
+    Discriminator,
+)
 from src.model.encoders import Encoder
 from src.model.tokenizers import Tokenizer
 from src.reading.readers import read_csfd, read_facebook, read_mall
@@ -27,7 +33,7 @@ if __name__ == "__main__":
 
     train_datasets, val_datasets = get_datasets_ready_for_finetuning(
         datasets,
-        drop_neutral=True,
+        transformation="ordinal_regression",
         balance_data=False,
         majority_ratio=DatasetParams.MAJORITY_RATIO,
         preprocessor=asc.preprocessor,

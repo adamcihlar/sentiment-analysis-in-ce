@@ -36,7 +36,7 @@ if __name__ == "__main__":
         source_train_df,
         source_val_df,
         target_df,
-        drop_neutral=True,
+        transformation="ordinal_regression",
         preprocessor=asc.preprocessor,
         tokenizer=asc.tokenizer,
         batch_size=16,

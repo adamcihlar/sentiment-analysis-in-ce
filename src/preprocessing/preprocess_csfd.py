@@ -18,13 +18,13 @@ def _preprocess():
         header=None,
         names=["text"],
     )
-    positive["label"] = 1
+    positive["label"] = 2
     neutral = pd.read_table(
         os.path.join(paths.DATA_RAW_DIR_CSFD, "neutral.txt"),
         header=None,
         names=["text"],
     )
-    neutral["label"] = 2
+    neutral["label"] = 1
 
     df = pd.concat([negative, positive, neutral], axis=0).reset_index(drop=True)
     df["source"] = "csfd"

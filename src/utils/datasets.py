@@ -17,22 +17,24 @@ def drop_undefined_classes(dataset: pd.DataFrame):
     return dataset
 
 
-def transform_labels_to_probs(dataset, drop_neutral=True):
+def transform_labels(dataset, transformation='drop_neutral'):
     """
     Based on how I want to finetune the source classifier, I need to transform the labels.
     I can either drop the neutral class to have binary classification or make it 0.5 and finetune in distilationlike settings.
     """
-    if drop_neutral:
-        sum_neutral = sum(dataset.label == 2)
+    if transformation='drop_neutral':
+        sum_neutral = sum(dataset.label == 1)
         logger.info(
             f"Dropped neutral class - {sum_neutral} samples, data transformed to binary classification problem."
         )
-        dataset = dataset.loc[dataset.label.isin([0, 1])]
-    else:
+        dataset = dataset.loc[dataset.label.isin([0, 2])]
+        dataset.label.loc[dataset.label == 2] = 1
+    elif transformation='ordinal_regression':
         logger.info(
-            f"Neutral class labelled as 0.5, data transformed to distilationlike settings."
+            f"Labels kept in order negative - neutral - positive to allow for ordinal regression."
         )
-        dataset.label.loc[dataset.label == 2] = 0.5
+    else:
+        raise NotImplementedError
     return dataset
 
 
@@ -58,7 +60,7 @@ def get_finetuning_datasets(source_dataset: pd.DataFrame):
     """
     Getting the dataset for finetuning is not dependant on the target dataset.
     Basically just splits the source dataset to train and val and saves the
-    splits.
+    splits to
     """
     source_train_X, source_val_X, source_train_y, source_val_y = train_test_split(
         source_dataset.loc[:, source_dataset.columns != "label"],
@@ -263,11 +265,11 @@ def get_datasets_ready_for_finetuning(
 
     # both
     train_datasets = [
-        transform_labels_to_probs(ds, drop_neutral=drop_neutral)
+        transform_labels_to_one_hots(ds, drop_neutral=drop_neutral)
         for ds in train_datasets
     ]
     val_datasets = [
-        transform_labels_to_probs(ds, drop_neutral=drop_neutral) for ds in val_datasets
+        transform_labels_to_one_hots(ds, drop_neutral=drop_neutral) for ds in val_datasets
     ]
 
     # only train
