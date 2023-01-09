@@ -300,12 +300,12 @@ class AdaptiveSentimentClassifier:
                     k: v.to(device)
                     for k, v in next(dataloader_iterators[source_ds]).items()
                 }
-                levels = levels_from_labelbatch(batch["labels"], num_classes)
+                levels = levels_from_labelbatch(batch["labels"], num_classes).to(device)
                 # forward pass
                 features = encoder(**batch)
                 logits, probs = classifiers[source_ds].forward(features)
                 # backward pass
-                cls_loss = coral_loss(logits, levels.unsqueeze(1).to(torch.float32))
+                cls_loss = coral_loss(logits, levels)
                 cls_loss.backward()
                 # optimize the corresponding classifier and encoder
                 cls_optimizers[source_ds].step()
