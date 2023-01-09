@@ -45,7 +45,7 @@ class ClassifierParams:
     FINETUNED_DATASET = FINETUNED_DATASET
     INPUT_SIZE = 256
     HIDDEN_SIZE = 1024
-    NUM_CLASSES = 2
+    NUM_CLASSES = 3
 
 
 # DISCRIMINATOR parameters
