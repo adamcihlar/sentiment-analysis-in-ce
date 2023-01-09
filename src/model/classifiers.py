@@ -358,7 +358,7 @@ class AdaptiveSentimentClassifier:
                     ]
                 [
                     val_metrics_progress[val_ds_name][val_metric].append(
-                        val_metrics[val_metric].compute(average="macro")[val_metric]
+                        val_metrics[val_metric].compute()[val_metric]
                     )
                     for val_metric in val_metrics
                 ]
