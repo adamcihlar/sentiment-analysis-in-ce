@@ -274,7 +274,7 @@ class AdaptiveSentimentClassifier:
         val_metrics = {metric: load(metric) for metric in metrics}
         val_metrics_progress = {ds: {} for ds in val_datasets}
         for ds in val_metrics_progress:
-            if asc.classifier().num_classes <= 2:
+            if self.classifier().num_classes <= 2:
                 val_metrics_progress[ds] = {
                     metric_name: [] for metric_name in val_metrics
                 }
