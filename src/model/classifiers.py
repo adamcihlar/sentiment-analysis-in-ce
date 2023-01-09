@@ -274,7 +274,14 @@ class AdaptiveSentimentClassifier:
         val_metrics = {metric: load(metric) for metric in metrics}
         val_metrics_progress = {ds: {} for ds in val_datasets}
         for ds in val_metrics_progress:
-            val_metrics_progress[ds] = {metric_name: [] for metric_name in val_metrics}
+            if asc.classifier().num_classes <= 2:
+                val_metrics_progress[ds] = {
+                    metric_name: [] for metric_name in val_metrics
+                }
+            else:
+                val_metrics_progress[ds] = {
+                    metric_name: [] for metric_name in ["micro", "macro", "weighted"]
+                }
         train_loss_mean_progress = {ds_name: [] for ds_name in train_datasets}
         val_loss_mean_progress = {ds_name: [] for ds_name in val_datasets}
         train_loss_batch_progress = {ds_name: [] for ds_name in train_datasets}
@@ -356,12 +363,20 @@ class AdaptiveSentimentClassifier:
                         )
                         for val_metric in val_metrics
                     ]
-                [
-                    val_metrics_progress[val_ds_name][val_metric].append(
-                        val_metrics[val_metric].compute()[val_metric]
-                    )
-                    for val_metric in val_metrics
-                ]
+                if self.classifier().num_classes <= 2:
+                    [
+                        val_metrics_progress[val_ds_name][val_metric].append(
+                            val_metrics[val_metric].compute()[val_metric]
+                        )
+                        for val_metric in val_metrics
+                    ]
+                else:
+                    [
+                        val_metrics_progress[val_ds_name][val_metric].append(
+                            val_metrics["f1"].compute(average=val_metric)[val_metric]
+                        )
+                        for val_metric in val_metrics
+                    ]
 
             # compute average losses per epoch
             for ds_name in train_datasets:
