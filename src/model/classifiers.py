@@ -153,12 +153,12 @@ class AdaptiveSentimentClassifier:
             self.classifier = classifier
         self.target_encoder = target_encoder
 
-    def probs_to_labels(probs):
+    def probs_to_labels(self, probs):
         ranks = probs >= 0.5
         labels = torch.sum(ranks, 1)
         return labels
 
-    def probs_to_scale(probs):
+    def probs_to_scale(self, probs):
         scale = torch.sum(probs, 1)
         return scale
 
