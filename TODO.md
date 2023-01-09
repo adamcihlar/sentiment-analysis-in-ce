@@ -1,16 +1,19 @@
 ### Tasks
+* Next steps
+- [ ] Implement ordinal classification
+    * Encoding labels
+    * Change last layer of the ClassificationHead
+    * Change loss
+    * Revisit step 2b of adaptation - distillation with the new labels and loss
+
 * **Main streams**
 - [ ] Finetuning on all three datasets - resources?
 - [ ] Showcase the work to Stepan
 - [ ] Preprocessing of the emails
 
 * **Other**
-- [ ] If adaptation is performed on dataset with labels, I want to save the
-  train and val spilts
-- [ ] To be able to skip the validation, I need to save the validation datasets first to evaluate the models on them later
-- [ ] Inference
-    * Predict method of the AdaptiveSentimentClassifier
 - [ ] Gradient clipping https://discuss.pytorch.org/t/check-the-norm-of-gradients/27961
+    * Norm clipping https://github.com/rasbt/deeplearning-models/blob/master/pytorch_ipynb/tricks/gradclipping_mlp.ipynb
 - [ ] Put all params to config
     * If arguments not passed from CLI, take the defaults from config
 - [ ] Train the models
@@ -25,7 +28,7 @@
 ##### Open questions
 - [ ] Separator between conversations in mails.txt?
 - [ ] Encoding of the mails.txt? Replace special chars for czech letters? Or just fix encoding somehow?
-- [ ] Distribution of the results - are these emails closed set, so should the results cover the whole range between 0 and 1? Or do we want "absolute" sentiment (most of the values would probably be somewhere around 0.5)? If the results are imput for next mode, it doesn't really matter.
+- [ ] Distribution of the results - are these emails closed set, so should the results cover the whole range between 0 and 1? Or do we want "absolute" sentiment (most of the values would probably be somewhere around 0.5)? If the results are input for next mode, it doesn't really matter.
 - [ ] What is the desired output? Answer with score? Any ID?
 - [ ] Inference time/requirements - how heavy can the final model be?
 - [ ] Interaction of the user with the tool - API? Bulk inderence? Adaptation on target data?
@@ -41,6 +44,12 @@
 	* Do I really need big preprocessing if I am using BERT-like tokenizers? Well not really, I just need to preprocess the emails, but if I get cleaned email body, I am good to go with the tokenizers
 
 #### Done
+- [x] If adaptation is performed on dataset with labels, I want to save the
+  train and val spilts
+    * There are no splits, everything can be train and validation at the same time - I can use the whole dataset for adaptation
+- [x] To be able to skip the validation, I need to save the validation datasets first to evaluate the models on them later
+- [x] Inference
+    * Predict method of the AdaptiveSentimentClassifier
 - [x] Look for a lighter model
     * https://huggingface.co/Seznam/small-e-czech
 - [x] Adaptation method
