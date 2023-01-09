@@ -11,8 +11,11 @@ from loguru import logger
 import numpy as np
 import pandas as pd
 import torch
+import coral_pytorch
 from torch.utils.data import DataLoader
 from evaluate import load
+from coral_pytorch.losses import coral_loss
+from coral_pytorch.dataset import levels_from_labelbatch
 
 from src.utils.datasets import ClassificationDataset
 from src.utils.optimization import (
@@ -43,7 +46,7 @@ class ClassificationHead(torch.nn.Module):
         self,
         input_size=ClassifierParams.INPUT_SIZE,
         hidden_size=ClassifierParams.HIDDEN_SIZE,
-        num_classes=1,
+        num_classes=ClassifierParams.NUM_CLASSES,
         dropout=0.1,
         model=None,
         path_to_finetuned=None,
@@ -60,19 +63,24 @@ class ClassificationHead(torch.nn.Module):
                 ),
                 torch.nn.Sequential(
                     torch.nn.Dropout(dropout),
-                    torch.nn.Linear(hidden_size, num_classes),
-                    torch.nn.Sigmoid(),
+                    torch.nn.Linear(hidden_size, hidden_size),
+                    torch.nn.Tanh(),
                 ),
+                torch.nn.Sequential(
+                    torch.nn.Dropout(dropout),
+                    coral_pytorch.layers.CoralLayer(size_in=hidden_size, num_classes=num_classes)
             )
         if path_to_finetuned is not None:
             logger.info(
                 f"Loading model parameters for ClassificationHead from {path_to_finetuned}."
             )
             self.load_state_dict(torch.load(path_to_finetuned))
+        self.num_classes = num_classes
 
     def forward(self, inputs):
-        outputs = self.model(inputs)
-        return outputs
+        logits = self.model(inputs)
+        probs = torch.sigmoid(logits)
+        return outputs, probs
 
 
 class Discriminator(torch.nn.Module):
@@ -180,6 +188,7 @@ class AdaptiveSentimentClassifier:
         # get one classfication head per dataset and shared encoder for all datasets
         classifiers = {ds_name: self.classifier() for ds_name in train_datasets}
         encoder = self.source_encoder
+        num_classes = self.classifier().num_classes
 
         # get optimizer for each classfication head and the shared encoder
         if lr_decay is None or lr_decay == 1:
@@ -290,12 +299,13 @@ class AdaptiveSentimentClassifier:
                     k: v.to(device)
                     for k, v in next(dataloader_iterators[source_ds]).items()
                 }
+                levels = levels_from_labelbatch(batch["labels"], num_classes)
                 # forward pass
                 features = encoder(**batch)
-                predictions = classifiers[source_ds].forward(features)
+                logits, probs = classifiers[source_ds].forward(features)
                 # backward pass
-                cls_loss = bce_loss(
-                    predictions, batch["labels"].unsqueeze(1).to(torch.float32)
+                cls_loss = coral_loss(
+                    logits, levels.unsqueeze(1).to(torch.float32)
                 )
                 cls_loss.backward()
                 # optimize the corresponding classifier and encoder
