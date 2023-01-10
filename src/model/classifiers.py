@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from evaluate import load
 from coral_pytorch.layers import CoralLayer
 from coral_pytorch.losses import coral_loss, corn_loss
-from coral_pytorch.dataset import levels_from_labelbatch
+from coral_pytorch.dataset import levels_from_labelbatch, corn_labels_from_logits
 
 from src.utils.datasets import ClassificationDataset
 from src.utils.optimization import (
@@ -361,14 +361,14 @@ class AdaptiveSentimentClassifier:
 
                     cls_loss = corn_loss(logits, batch["labels"], num_classes)
                     val_epoch_loss_progress[val_ds_name].append(cls_loss.item())
-                    predictions = self.probs_to_labels(probs)
+                    predictions = corn_labels_from_logits(logits).float()
                     [
                         val_metrics[val_metric].add_batch(
                             predictions=predictions, references=batch["labels"]
                         )
                         for val_metric in val_metrics
                     ]
-                if self.classifier().num_classes <= 2:
+                if num_classes <= 2:
                     [
                         val_metrics_progress[val_ds_name][val_metric].append(
                             val_metrics[val_metric].compute()[val_metric]
