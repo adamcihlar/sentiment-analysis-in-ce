@@ -17,10 +17,11 @@ from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
 
 if __name__ == "__main__":
-    source_mall = read_mall()
+    source_mall = read_mall().sample(100)
     source_facebook = read_facebook()
     source_csfd = read_csfd()
     datasets = [source_csfd, source_facebook, source_mall]
+    datasets = [source_facebook]
 
     asc = AdaptiveSentimentClassifier(
         Preprocessor(),
@@ -54,5 +55,5 @@ if __name__ == "__main__":
         lr_scheduler_call=get_linear_schedule_with_warmup,
         warmup_steps_proportion=FinetuningOptimizationParams.WARM_UP_STEPS_PROPORTION,
         num_epochs=FinetuningOptimizationParams.NUM_EPOCHS,
-        metrics=["f1", "accuracy", "precision", "recall"],
+        metrics=["f1"],
     )
