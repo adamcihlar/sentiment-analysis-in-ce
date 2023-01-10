@@ -14,7 +14,7 @@ import torch
 from torch.utils.data import DataLoader
 from evaluate import load
 from coral_pytorch.layers import CoralLayer
-from coral_pytorch.losses import coral_loss
+from coral_pytorch.losses import coral_loss, corn_loss
 from coral_pytorch.dataset import levels_from_labelbatch
 
 from src.utils.datasets import ClassificationDataset
@@ -68,7 +68,7 @@ class ClassificationHead(torch.nn.Module):
                 #                 ),
                 torch.nn.Sequential(
                     torch.nn.Dropout(dropout),
-                    CoralLayer(size_in=hidden_size, num_classes=num_classes),
+                    torch.nn.Linear(hidden_size, num_classes - 1),
                 ),
             )
         if path_to_finetuned is not None:
@@ -271,7 +271,7 @@ class AdaptiveSentimentClassifier:
         encoder.to(device)
 
         # track training info
-        if self.classifier().num_classes <= 2:
+        if num_classes <= 2:
             val_metrics = {metric: load(metric) for metric in metrics}
         else:
             val_metrics = {
@@ -279,7 +279,7 @@ class AdaptiveSentimentClassifier:
             }
         val_metrics_progress = {ds: {} for ds in val_datasets}
         for ds in val_metrics_progress:
-            if self.classifier().num_classes <= 2:
+            if num_classes <= 2:
                 val_metrics_progress[ds] = {
                     metric_name: [] for metric_name in val_metrics
                 }
@@ -319,12 +319,12 @@ class AdaptiveSentimentClassifier:
                     k: v.to(device)
                     for k, v in next(dataloader_iterators[source_ds]).items()
                 }
-                levels = levels_from_labelbatch(batch["labels"], num_classes).to(device)
+                # levels = levels_from_labelbatch(batch["labels"], num_classes).to(device)
                 # forward pass
                 features = encoder(**batch)
                 logits, probs = classifiers[source_ds].forward(features)
                 # backward pass
-                cls_loss = coral_loss(logits, levels)
+                cls_loss = corn_loss(logits, batch["labels"], num_classes)
                 cls_loss.backward()
                 # optimize the corresponding classifier and encoder
                 cls_optimizers[source_ds].step()
@@ -352,14 +352,14 @@ class AdaptiveSentimentClassifier:
             for val_ds_name in val_datasets:
                 for batch in val_datasets[val_ds_name].torch_dataloader:
                     batch = {k: v.to(device) for k, v in batch.items()}
-                    levels = levels_from_labelbatch(batch["labels"], num_classes).to(
-                        device
-                    )
+                    #                     levels = levels_from_labelbatch(batch["labels"], num_classes).to(
+                    #                         device
+                    #                     )
                     with torch.no_grad():
                         features = encoder(**batch)
                         logits, probs = classifiers[val_ds_name].forward(features)
 
-                    cls_loss = coral_loss(logits, levels)
+                    cls_loss = corn_loss(logits, batch["labels"], num_classes)
                     val_epoch_loss_progress[val_ds_name].append(cls_loss.item())
                     predictions = self.probs_to_labels(probs)
                     [
