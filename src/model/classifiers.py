@@ -361,7 +361,7 @@ class AdaptiveSentimentClassifier:
 
                     cls_loss = corn_loss(logits, batch["labels"], num_classes)
                     val_epoch_loss_progress[val_ds_name].append(cls_loss.item())
-                    predictions = corn_labels_from_logits(logits).float()
+                    predictions = corn_label_from_logits(logits).float()
                     [
                         val_metrics[val_metric].add_batch(
                             predictions=predictions, references=batch["labels"]
