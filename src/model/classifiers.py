@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from evaluate import load
 from coral_pytorch.layers import CoralLayer
 from coral_pytorch.losses import coral_loss, corn_loss
-from coral_pytorch.dataset import levels_from_labelbatch, corn_labels_from_logits
+from coral_pytorch.dataset import levels_from_labelbatch, corn_label_from_logits
 
 from src.utils.datasets import ClassificationDataset
 from src.utils.optimization import (
