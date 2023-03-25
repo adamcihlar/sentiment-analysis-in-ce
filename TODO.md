@@ -9,6 +9,8 @@
 - [x] Data
     * Get train, val, test splits
 - [ ] Adaptation
+    * Adaptation parameters analysis
+    * Adapt the target
 - [ ] Inference (interface, interaction, output structure)
 
 * **Other**
