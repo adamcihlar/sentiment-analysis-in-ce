@@ -132,5 +132,5 @@ dmypy.json
 data
 #models
 #train_info
-adaptation_analysis
+assets/
 predictions/
