@@ -4,10 +4,10 @@
 * **Main streams**
 - [x] Finetuning on all three datasets - resources?
     * So I have it for all combinations of datasets for both ordinal and multiclass settings except for multiclass pairs (fb+csfd, fb+mall, csfd+mall)
-- [ ] Preprocessing of the emails
+- [x] Preprocessing of the emails
     * Send preprocessed emails back to Stepan - he might arrange a labelling experiment
-- [ ] Data
-    * Get train, val, test splits from mac
+- [x] Data
+    * Get train, val, test splits
 - [ ] Adaptation
 - [ ] Inference (interface, interaction, output structure)
 
@@ -16,9 +16,10 @@
     * Norm clipping https://github.com/rasbt/deeplearning-models/blob/master/pytorch_ipynb/tricks/gradclipping_mlp.ipynb
 - [ ] Put all params to config
     * If arguments not passed from CLI, take the defaults from config
-- [ ] Try stronger model - Robeczech
+- [x] Try stronger model - Robeczech
     * Just for one dataset to see the possible improvement
-- [ ] Train the models
+    * No, I am not going to do it, useless
+- [x] Train the models
     * Use balanced datasets (in terms of source and labels) for the multitask
       learning?
     * Rather use as many samples as possible
@@ -29,19 +30,19 @@
       the user eventually call
 
 ##### Open questions
-- [ ] Separator between conversations in mails.txt?
-- [ ] Encoding of the mails.txt? Replace special chars for czech letters? Or just fix encoding somehow?
-- [ ] Distribution of the results - are these emails closed set, so should the results cover the whole range between 0 and 1? Or do we want "absolute" sentiment (most of the values would probably be somewhere around 0.5)? If the results are input for next mode, it doesn't really matter.
-- [ ] What is the desired output? Answer with score? Any ID?
+- [x] Separator between conversations in mails.txt?
+- [x] Encoding of the mails.txt? Replace special chars for czech letters? Or just fix encoding somehow?
+- [x] Distribution of the results - are these emails closed set, so should the results cover the whole range between 0 and 1? Or do we want "absolute" sentiment (most of the values would probably be somewhere around 0.5)? If the results are input for next mode, it doesn't really matter.
+- [x] What is the desired output? Answer with score? Any ID?
 - [ ] Inference time/requirements - how heavy can the final model be?
 - [ ] Interaction of the user with the tool - API? Bulk inference? Adaptation on target data?
 
 #### On hold
 - [ ] API with inference for one email
     * Agree first on how the output should look like
-- [ ] Preprocess the emails
+- [x] Preprocess the emails
     * Wait for reply with additional info about the super messy file
-- [ ] Preprocess data
+- [x] Preprocess data
 	* How? Inspiration here https://is.muni.cz/th/n0lnb/Sentiment_Analysis_cz.pdf + other Czech papers dealing with sentiment analysis
 	* Maybe I can have preprocessing pipeline, start with nothing and just add elements step by step
 	* Do I really need big preprocessing if I am using BERT-like tokenizers? Well not really, I just need to preprocess the emails, but if I get cleaned email body, I am good to go with the tokenizers
