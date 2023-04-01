@@ -17,9 +17,18 @@ enc = "_".join([model[0], model[1]])
 enc_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_ENCODER, enc)
 cls = "_".join([model[0], model[2], model[1]])
 cls_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER, cls)
-file_pth = paths.DATA_PROCESSED_RESPONSES_CONFIRMED
 
-test_df = pd.read_csv(file_pth, index_col=0)
+test_df = read_preprocessed_emails()
+
+test_df = pd.read_csv("data/preprocessed/responses_confirmed_full.csv", index_col=0)
+test_df = test_df.loc[~test_df.invalid]
+
+orig_emails_count = 311
+foreign = 29
+sum(test_df.invalid) - orig_emails_count - foreign
+
+sum(~test_df.invalid)
+
 
 asc = AdaptiveSentimentClassifier(
     Preprocessor(),
@@ -51,4 +60,4 @@ sent_df = read_raw_sent()
 
 merged = pd.merge(test_df, sent_df, how="left", left_on="id_2", right_on="id")
 
-sum(merged.language.isna())
+pd.read_csv("output/train_info/finetuning/test/csfd.csv")

@@ -126,11 +126,15 @@ if __name__ == "__main__":
                 )
 
     # emails
+    # I need to copy the source train split to the desired location
+    # or adjust the read_finetuning_source to simply read from data/final/finetuning_train
     source_train_df, source_val_df = read_finetuning_source(
         selected_model=parameters.FINETUNED_CHECKPOINT,
         selected_dataset=parameters.FINETUNED_DATASET,
     )
     target_df = read_preprocessed_emails()
+    test_df = pd.read_csv("data/preprocessed/responses_confirmed_full.csv", index_col=0)
+    test_df.loc[~test_df.invalid]
 
     asc = AdaptiveSentimentClassifier(
         Preprocessor(),

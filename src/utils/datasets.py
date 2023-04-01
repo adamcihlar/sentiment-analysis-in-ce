@@ -389,7 +389,10 @@ def get_datasets_ready_for_finetuning(
     }
 
     [ds.preprocess(preprocessor) for ds in train_datasets.values()]
-    [ds.tokenize(tokenizer) for ds in train_datasets.values()]
+    if tokenize_during_training:
+        pass
+    else:
+        [ds.tokenize(tokenizer) for ds in train_datasets.values()]
     [ds.create_dataset() for ds in train_datasets.values()]
     [
         ds.create_dataloader(
