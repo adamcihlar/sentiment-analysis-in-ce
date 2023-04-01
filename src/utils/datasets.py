@@ -327,7 +327,7 @@ def get_datasets_ready_for_finetuning(
     skip_validation,
     min_query_len,
     share_classifier,
-    tokenize_during_training,
+    tokenize_in_advance,
 ):
     """
     Just wrapping many functions and methods that are common for preparing
