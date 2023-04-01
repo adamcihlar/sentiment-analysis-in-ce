@@ -18,7 +18,7 @@ from torch.optim import AdamW
 from transformers import get_linear_schedule_with_warmup
 
 if __name__ == "__main__":
-    source_mall = read_mall().sample(100)
+    source_mall = read_mall()
     source_facebook = read_facebook().sample(100)
     source_csfd = read_csfd()
     datasets = [source_csfd, source_facebook, source_mall]
@@ -39,17 +39,19 @@ if __name__ == "__main__":
         datasets,
         transformation=DatasetParams.TRANSFORMATION,
         # transformation="multiclass_classification",
-        balance_data=False,
+        # balance_data=False,
+        balance_data=True,
         majority_ratio=DatasetParams.MAJORITY_RATIO,
         preprocessor=asc.preprocessor,
         tokenizer=asc.tokenizer,
         batch_size=DataLoaderParams.BATCH_SIZE,
         shuffle=DataLoaderParams.SHUFFLE,
         num_workers=DataLoaderParams.NUM_WORKERS,
-        skip_validation=FinetuningOptimizationParams.SKIP_VALIDATION,
+        # skip_validation=FinetuningOptimizationParams.SKIP_VALIDATION,
+        skip_validation=True,
         min_query_len=FinetuningOptimizationParams.MIN_QUERY_LEN,
-        share_classifier=True,
-        # share_classifier=ClassifierParams.SHARE_CLASSIFIER,
+        # share_classifier=True,
+        share_classifier=ClassifierParams.SHARE_CLASSIFIER,
     )
 
     asc.finetune(

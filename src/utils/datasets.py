@@ -368,7 +368,7 @@ def get_datasets_ready_for_finetuning(
         majority_ratio = "N/A"
 
     if skip_validation:
-        val_datasets = [ds.iloc[0] for ds in val_datasets]
+        val_datasets = [ds.iloc[0:2] for ds in val_datasets]
 
     train_datasets = [filter_min_query_len(ds, min_query_len) for ds in train_datasets]
 
