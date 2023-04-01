@@ -327,7 +327,6 @@ def get_datasets_ready_for_finetuning(
     skip_validation,
     min_query_len,
     share_classifier,
-    tokenize_in_advance,
 ):
     """
     Just wrapping many functions and methods that are common for preparing
@@ -390,8 +389,7 @@ def get_datasets_ready_for_finetuning(
     }
 
     [ds.preprocess(preprocessor) for ds in train_datasets.values()]
-    if tokenize_in_advance:
-        [ds.tokenize(tokenizer) for ds in train_datasets.values()]
+    [ds.tokenize(tokenizer) for ds in train_datasets.values()]
     [ds.create_dataset() for ds in train_datasets.values()]
     [
         ds.create_dataloader(

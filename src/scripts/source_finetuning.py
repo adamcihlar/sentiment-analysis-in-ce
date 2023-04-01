@@ -50,7 +50,6 @@ if __name__ == "__main__":
         min_query_len=FinetuningOptimizationParams.MIN_QUERY_LEN,
         share_classifier=True,
         # share_classifier=ClassifierParams.SHARE_CLASSIFIER,
-        tokenize_in_advance=False,
     )
 
     asc.finetune(
