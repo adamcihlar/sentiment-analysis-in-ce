@@ -47,7 +47,7 @@ def random_undersampling(dataset, majority_ratio=1, random_state=42):
     minor_samples_count = np.min(label_counts)
     minor_class = label_counts.index.values[np.argmin(label_counts)]
     other_classes = label_counts.loc[label_counts != np.min(label_counts)].index
-    major_samples_count = minor_samples_count * majority_ratio
+    major_samples_count = int(minor_samples_count * majority_ratio)
     sampled_majority = []
     for cls in other_classes:
         sampled_majority.append(
