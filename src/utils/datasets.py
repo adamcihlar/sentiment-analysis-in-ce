@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 from src.config import parameters, paths
 from src.config.parameters import RANDOM_STATE, TokenizerParams
 from src.reading.readers import read_adaptation_target, read_finetuning_train_val
+from src.utils.metrics import mae_macro, rmse_macro
 
 
 def drop_undefined_classes(dataset: pd.DataFrame):
