@@ -240,6 +240,15 @@ class ClassificationDataset:
         """
         print(classification_report(self.y, self.y_pred))
         report = classification_report(self.y, self.y_pred, output_dict=True)
+
+        mae_metrics = mae_macro(self.y, self.y_pred)
+        for key in mae_metrics:
+            report[key]["mae"] = mae_metrics[key]
+
+        rmse_metrics = rmse_macro(self.y, self.y_pred)
+        for key in rmse_metrics:
+            report[key]["rmse"] = rmse_metrics[key]
+
         print(confusion_matrix(self.y, self.y_pred))
         json_report = json.dumps(report, indent=4)
         with open(save_path, "w") as outfile:

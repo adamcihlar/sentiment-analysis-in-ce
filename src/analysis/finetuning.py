@@ -3,6 +3,7 @@ import re
 import numpy as np
 import pandas as pd
 from src.config import paths
+import itertools
 
 
 def main(datasets):
@@ -64,7 +65,18 @@ def main(datasets):
         test_results_df = pd.DataFrame()
         for i, filename in enumerate(test_files):
             f = os.path.join(path_to_results, filename)
-            df = pd.read_json(f).loc["f1-score"]
+
+            df = (
+                pd.read_json(f)
+                .loc[["f1-score", "mae", "rmse"]]
+                .dropna(axis=1)
+                .drop(columns="accuracy")
+            )
+            cols = list(itertools.product(df.index, df.columns))
+            col_names = [col[0] + "_" + col[1] for col in cols]
+            vals = df.values.flatten()
+            df = pd.Series(vals, index=col_names)
+
             df["model"] = filename
             df["encoder"] = encoders[i]
             df["classifier"] = classifiers[i]
