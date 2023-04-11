@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import re
@@ -64,13 +65,9 @@ def get_df_for_plot(target, target_schedule, path_to_results):
 
     gs_path = os.path.join(paths.OUTPUT_INFO_FINETUNING, "test", target + ".csv")
     golden = pd.read_csv(gs_path, index_col=0)
-    micro_golden = golden.iloc[np.argmax(golden["macro avg"])].accuracy
-    macro_golden = np.max(golden["macro avg"])
-    weighted_golden = golden.iloc[np.argmax(golden["macro avg"])]["weighted avg"]
+    macro_golden = np.max(golden["f1-score_macro avg"])
 
-    df["micro_drop"] = df["micro"] - micro_golden
     df["macro_drop"] = df["macro"] - macro_golden
-    df["weighted_drop"] = df["weighted"] - weighted_golden
     return df
 
 
@@ -108,16 +105,6 @@ def plot_results(df, target):
                 values=df.source_dataset_d,
             ),
             dict(
-                label="F1-micro",
-                range=[df.micro.min(), df.micro.max()],
-                # range=[df.micro.min() + 0.2, df.micro.max()], # mall adjust
-                tickvals=get_ticks(df.micro.min(), df.micro.max()),
-                # tickvals=get_ticks(df.micro.min() + 0.2, df.micro.max()), # mall adjust
-                ticktext=get_ticks(df.micro.min(), df.micro.max()),
-                # ticktext=get_ticks(df.micro.min() + 0.2, df.micro.max()), # mall adjust
-                values=df.micro,
-            ),
-            dict(
                 label="F1-macro",
                 range=[df.macro.min(), df.macro.max()],
                 tickvals=get_ticks(df.macro.min(), df.macro.max()),
@@ -125,42 +112,11 @@ def plot_results(df, target):
                 values=df.macro,
             ),
             dict(
-                label="F1-weighted",
-                range=[df.weighted.min(), df.weighted.max()],
-                # range=[df.weighted.min() + 0.2, df.weighted.max()], # mall adjust
-                tickvals=get_ticks(df.weighted.min(), df.weighted.max()),
-                # tickvals=get_ticks(df.weighted.min() + 0.2, df.weighted.max()), # mall adjust
-                ticktext=get_ticks(df.weighted.min(), df.weighted.max()),
-                # ticktext=get_ticks(df.weighted.min() + 0.2, df.weighted.max()), # mall adjust
-                values=df.weighted,
-            ),
-            dict(
-                label="F1-micro drop",
-                range=[df.micro_drop.min(), df.micro_drop.max()],
-                tickvals=get_ticks(df.micro_drop.min(), df.micro_drop.max()),
-                ticktext=get_ticks(df.micro_drop.min(), df.micro_drop.max()),
-                values=df.micro_drop,
-            ),
-            dict(
                 label="F1-macro drop",
                 range=[df.macro_drop.min(), df.macro_drop.max()],
                 tickvals=get_ticks(df.macro_drop.min(), df.macro_drop.max()),
                 ticktext=get_ticks(df.macro_drop.min(), df.macro_drop.max()),
                 values=df.macro_drop,
-            ),
-            dict(
-                label="F1-weighted drop",
-                range=[df.weighted_drop.min(), df.weighted_drop.max()],
-                tickvals=get_ticks(df.weighted_drop.min(), df.weighted_drop.max()),
-                ticktext=get_ticks(df.weighted_drop.min(), df.weighted_drop.max()),
-                values=df.weighted_drop,
-            ),
-            dict(
-                label="Test loss",
-                range=[df.test_loss.min(), df.test_loss.max()],
-                tickvals=get_ticks(df.test_loss.min(), df.test_loss.max()),
-                ticktext=get_ticks(df.test_loss.min(), df.test_loss.max()),
-                values=df.test_loss,
             ),
         ]
     )
