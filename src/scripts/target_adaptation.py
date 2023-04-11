@@ -71,7 +71,7 @@ if __name__ == "__main__":
         )
 
         # skip validation
-        source_val_df = source_val_df.iloc[0]
+        source_val_df = source_val_df.iloc[0:2]
 
         target_df = datasets[i]().sample(AdaptationOptimizationParams.N_EMAILS)
 
