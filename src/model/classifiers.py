@@ -645,70 +645,70 @@ class AdaptiveSentimentClassifier:
         train_mean_loss_dict = {loss: [] for loss in ["disc", "gen", "class", "enc"]}
         train_batch_loss_dict = {loss: [] for loss in ["disc", "gen", "class", "enc"]}
 
-#         # get the initial metrics for validation dataset
-#         logger.info("Getting the initial metrics for validation dataset.")
-#         target_encoder.eval()
-#         val_epoch_loss_progress = []
-#         progress_bar = tqdm(range(len(source_val.torch_dataloader)))
-#         for batch in source_val.torch_dataloader:
-#             batch = {k: v.to(device) for k, v in batch.items()}
-#             with torch.no_grad():
-#                 features = target_encoder(**batch)
-#                 logits, probs = classifier(features)
-#             cls_loss = corn_loss(logits, batch["labels"], classifier.num_classes)
-#             predictions = corn_label_from_logits(logits).float()
-#             progress_bar.update(1)
-#             val_epoch_loss_progress.append(cls_loss.item())
-#             [
-#                 val_metrics[val_metric].add_batch(
-#                     predictions=predictions, references=batch["labels"]
-#                 )
-#                 for val_metric in val_metrics
-#             ]
-#         [
-#             val_metrics_progress[val_metric].append(
-#                 val_metrics[val_metric].compute(average=val_metric)["f1"]
-#             )
-#             for val_metric in list(val_metrics_progress.keys())
-#         ]
-#         # print validation info
-#         epoch_val_loss = np.mean(np.array(val_epoch_loss_progress))
-#         val_loss_mean_progress.append(epoch_val_loss)
-#         print(f"Mean validation loss of the original encoder {epoch_val_loss}")
+        #         # get the initial metrics for validation dataset
+        #         logger.info("Getting the initial metrics for validation dataset.")
+        #         target_encoder.eval()
+        #         val_epoch_loss_progress = []
+        #         progress_bar = tqdm(range(len(source_val.torch_dataloader)))
+        #         for batch in source_val.torch_dataloader:
+        #             batch = {k: v.to(device) for k, v in batch.items()}
+        #             with torch.no_grad():
+        #                 features = target_encoder(**batch)
+        #                 logits, probs = classifier(features)
+        #             cls_loss = corn_loss(logits, batch["labels"], classifier.num_classes)
+        #             predictions = corn_label_from_logits(logits).float()
+        #             progress_bar.update(1)
+        #             val_epoch_loss_progress.append(cls_loss.item())
+        #             [
+        #                 val_metrics[val_metric].add_batch(
+        #                     predictions=predictions, references=batch["labels"]
+        #                 )
+        #                 for val_metric in val_metrics
+        #             ]
+        #         [
+        #             val_metrics_progress[val_metric].append(
+        #                 val_metrics[val_metric].compute(average=val_metric)["f1"]
+        #             )
+        #             for val_metric in list(val_metrics_progress.keys())
+        #         ]
+        #         # print validation info
+        #         epoch_val_loss = np.mean(np.array(val_epoch_loss_progress))
+        #         val_loss_mean_progress.append(epoch_val_loss)
+        #         print(f"Mean validation loss of the original encoder {epoch_val_loss}")
 
-#         # get initial test metrics if target labels are available
-#         if target.y is not None:
-#             logger.info("Getting the initial metrics for target dataset.")
-#             progress_bar = tqdm(range(len(target.torch_dataloader)))
-#             y_pred = []
-#             test_epoch_loss_progress = []
-#             for batch in target.torch_dataloader:
-#                 batch = {k: v.to(device) for k, v in batch.items()}
-#                 with torch.no_grad():
-#                     features = target_encoder(**batch)
-#                     logits, probs = classifier(features)
-#                 cls_loss = corn_loss(logits, batch["labels"], classifier.num_classes)
-#                 predictions = corn_label_from_logits(logits).float()
-#                 y_pred += predictions.detach().cpu().tolist()
-#                 progress_bar.update(1)
-#                 test_epoch_loss_progress.append(cls_loss.item())
-#                 [
-#                     test_metrics[test_metric].add_batch(
-#                         predictions=predictions, references=batch["labels"]
-#                     )
-#                     for test_metric in test_metrics
-#                 ]
-#             [
-#                 test_metrics_progress[test_metric].append(
-#                     test_metrics[test_metric].compute(average=test_metric)["f1"]
-#                 )
-#                 for test_metric in list(test_metrics_progress.keys())
-#             ]
-#         # print test info
-#         print(confusion_matrix(target.y, y_pred))
-#         epoch_test_loss = np.mean(np.array(test_epoch_loss_progress))
-#         test_loss_mean_progress.append(epoch_test_loss)
-#         print(f"Mean test loss of the original encoder {epoch_test_loss}")
+        #         # get initial test metrics if target labels are available
+        #         if target.y is not None:
+        #             logger.info("Getting the initial metrics for target dataset.")
+        #             progress_bar = tqdm(range(len(target.torch_dataloader)))
+        #             y_pred = []
+        #             test_epoch_loss_progress = []
+        #             for batch in target.torch_dataloader:
+        #                 batch = {k: v.to(device) for k, v in batch.items()}
+        #                 with torch.no_grad():
+        #                     features = target_encoder(**batch)
+        #                     logits, probs = classifier(features)
+        #                 cls_loss = corn_loss(logits, batch["labels"], classifier.num_classes)
+        #                 predictions = corn_label_from_logits(logits).float()
+        #                 y_pred += predictions.detach().cpu().tolist()
+        #                 progress_bar.update(1)
+        #                 test_epoch_loss_progress.append(cls_loss.item())
+        #                 [
+        #                     test_metrics[test_metric].add_batch(
+        #                         predictions=predictions, references=batch["labels"]
+        #                     )
+        #                     for test_metric in test_metrics
+        #                 ]
+        #             [
+        #                 test_metrics_progress[test_metric].append(
+        #                     test_metrics[test_metric].compute(average=test_metric)["f1"]
+        #                 )
+        #                 for test_metric in list(test_metrics_progress.keys())
+        #             ]
+        #         # print test info
+        #         print(confusion_matrix(target.y, y_pred))
+        #         epoch_test_loss = np.mean(np.array(test_epoch_loss_progress))
+        #         test_loss_mean_progress.append(epoch_test_loss)
+        #         print(f"Mean test loss of the original encoder {epoch_test_loss}")
 
         # prepare labels for distilation
         batch_size = source_train.torch_dataloader.batch_size
@@ -914,37 +914,37 @@ class AdaptiveSentimentClassifier:
             val_loss_mean_progress.append(epoch_val_loss)
             print(f"Mean validation loss for epoch {epoch}: {epoch_val_loss}")
 
-#             # test if target labels are available
-#             if target.y is not None:
-#                 y_pred = []
-#                 test_epoch_loss_progress = []
-#                 for batch in target.torch_dataloader:
-#                     batch = {k: v.to(device) for k, v in batch.items()}
-#                     with torch.no_grad():
-#                         features = target_encoder(**batch)
-#                         logits, probs = classifier(features)
-#                     cls_loss = corn_loss(
-#                         logits, batch["labels"], classifier.num_classes
-#                     )
-#                     predictions = corn_label_from_logits(logits).float()
-#                     y_pred += predictions.detach().cpu().tolist()
-#                     test_epoch_loss_progress.append(cls_loss.item())
-#                     [
-#                         test_metrics[test_metric].add_batch(
-#                             predictions=predictions, references=batch["labels"]
-#                         )
-#                         for test_metric in test_metrics
-#                     ]
-#                 [
-#                     test_metrics_progress[test_metric].append(
-#                         test_metrics[test_metric].compute(average=test_metric)["f1"]
-#                     )
-#                     for test_metric in list(test_metrics_progress.keys())
-#                 ]
-#                 print(confusion_matrix(target.y, y_pred))
-#                 epoch_test_loss = np.mean(np.array(test_epoch_loss_progress))
-#                 test_loss_mean_progress.append(epoch_test_loss)
-#                 print(f"Mean test loss on the target data {epoch_test_loss}")
+            #             # test if target labels are available
+            #             if target.y is not None:
+            #                 y_pred = []
+            #                 test_epoch_loss_progress = []
+            #                 for batch in target.torch_dataloader:
+            #                     batch = {k: v.to(device) for k, v in batch.items()}
+            #                     with torch.no_grad():
+            #                         features = target_encoder(**batch)
+            #                         logits, probs = classifier(features)
+            #                     cls_loss = corn_loss(
+            #                         logits, batch["labels"], classifier.num_classes
+            #                     )
+            #                     predictions = corn_label_from_logits(logits).float()
+            #                     y_pred += predictions.detach().cpu().tolist()
+            #                     test_epoch_loss_progress.append(cls_loss.item())
+            #                     [
+            #                         test_metrics[test_metric].add_batch(
+            #                             predictions=predictions, references=batch["labels"]
+            #                         )
+            #                         for test_metric in test_metrics
+            #                     ]
+            #                 [
+            #                     test_metrics_progress[test_metric].append(
+            #                         test_metrics[test_metric].compute(average=test_metric)["f1"]
+            #                     )
+            #                     for test_metric in list(test_metrics_progress.keys())
+            #                 ]
+            #                 print(confusion_matrix(target.y, y_pred))
+            #                 epoch_test_loss = np.mean(np.array(test_epoch_loss_progress))
+            #                 test_loss_mean_progress.append(epoch_test_loss)
+            #                 print(f"Mean test loss on the target data {epoch_test_loss}")
 
             # compute average losses per epoch
             {
