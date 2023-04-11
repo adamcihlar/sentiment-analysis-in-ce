@@ -16,8 +16,7 @@ from src.reading.readers import (
     read_mall,
 )
 
-if __name__=='__main__':
-    ### cross domain performance
+if __name__ == "__main__":
     test_sets = ["mall", "csfd", "facebook"]
 
     # mall
@@ -66,7 +65,7 @@ if __name__=='__main__':
             file_name = (
                 test_set + "_" + "_".join([model[0], model[2], model[1]]) + ".json"
             )
-            save_path = os.path.join(paths.OUTPUT_INFO_ZEROSHOT, , file_name)
+            save_path = os.path.join(paths.OUTPUT_INFO_ZEROSHOT, file_name)
 
             asc = AdaptiveSentimentClassifier(
                 Preprocessor(),
@@ -77,7 +76,7 @@ if __name__=='__main__':
                 Encoder(path_to_finetuned=enc_pth),
                 classifier_checkpoint_path=cls_pth,
                 inference_mode=True,
-                task_settings=model[3],
+                task_settings="ordinal",
             )
 
             test = ClassificationDataset(test_df.text, test_df.label, test_df.source)
