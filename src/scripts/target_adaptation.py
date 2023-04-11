@@ -22,7 +22,6 @@ from transformers import get_linear_schedule_with_warmup
 
 if __name__ == "__main__":
 
-
     # mall
     mall_models = [
         ("seznamsmall-e-czech_20230123-173904", "5", "facebook"),
@@ -57,6 +56,11 @@ if __name__ == "__main__":
         + [read_csfd for i in range(5)]
         + [read_facebook for i in range(5)]
     )
+    target_ds_names = (
+        ["mall" for i in range(5)]
+        + ["csfd" for i in range(5)]
+        + ["facebook" for i in range(5)]
+    )
 
     for i, model in enumerate(models):
         source_train_df, source_val_df = read_finetuning_source(
@@ -65,20 +69,29 @@ if __name__ == "__main__":
             # selected_dataset=parameters.FINETUNED_DATASET,
             selected_dataset=model[2],
         )
+
+        # skip validation
+        source_val_df = source_val_df.iloc[0]
+
         target_df = datasets[i]().sample(AdaptationOptimizationParams.N_EMAILS)
+
+        target_name = target_ds_names[i]
+        source_model = "_".join(model)
 
         enc = "_".join([model[0], model[1]])
         enc_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_ENCODER, enc)
         cls = "_".join([model[0], model[2], model[1]])
         cls_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER, cls)
 
-        temperatures = [1, 2, 5, 10, 20]
-        loss_combination_params_list = [
-            (0.2, 0.8),
-            (0.3, 0.7),
-            (0.4, 0.6),
-            (0.5, 0.5),
-        ]
+        # temperatures = [1, 2, 5, 10, 20]
+        temperatures = [20]
+        # loss_combination_params_list = [
+        #     (0.2, 0.8),
+        #     (0.3, 0.7),
+        #     (0.4, 0.6),
+        #     (0.5, 0.5),
+        # ]
+        loss_combination_params_list = [(0.5, 0.5)]
 
         for temp in temperatures:
             for loss_comb in loss_combination_params_list:
@@ -123,6 +136,8 @@ if __name__ == "__main__":
                     # loss_combination_params=AdaptationOptimizationParams.LOSS_COMBINATION_PARAMS,
                     loss_combination_params=loss_comb,
                     metrics=["f1"],
+                    target_name=target_name,
+                    source_model=source_model,
                 )
 
     # emails
