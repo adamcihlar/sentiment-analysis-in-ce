@@ -91,6 +91,8 @@ OUTPUT_INFO = os.path.join(OUTPUT, "train_info")
 
 # FINETUNING
 OUTPUT_INFO_FINETUNING = os.path.join(OUTPUT_INFO, "finetuning")
+# ZERO SHOT
+OUTPUT_INFO_ZEROSHOT = os.path.join(OUTPUT_INFO, "zeroshot")
 # ADAPTATION
 OUTPUT_INFO_ADAPTATION = os.path.join(OUTPUT_INFO, "adaptation")
 OUTPUT_INFO_ADAPTATION_MALL = os.path.join(OUTPUT_INFO_ADAPTATION, "mall")
