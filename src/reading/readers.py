@@ -82,10 +82,17 @@ def read_finetuning_source(
 
     if re.search("_", selected_dataset):
         val_names = selected_dataset.split("_")
+        # val_paths = [
+        #     os.path.join(
+        #         paths.DATA_FINAL_SOURCE_VAL,
+        #         "_".join([selected_model, selected_dataset]) + ".csv",
+        #     )
+        #     for selected_dataset in val_names
+        # ]
         val_paths = [
             os.path.join(
                 paths.DATA_FINAL_SOURCE_VAL,
-                "_".join([selected_model, selected_dataset]) + ".csv",
+                selected_dataset + ".csv",
             )
             for selected_dataset in val_names
         ]
@@ -93,9 +100,13 @@ def read_finetuning_source(
         val_ds = pd.concat(val_datasets, axis=0)
         val_ds.source = selected_dataset
     else:
+        # val_path = os.path.join(
+        #     paths.DATA_FINAL_SOURCE_VAL,
+        #     "_".join([selected_model, selected_dataset]) + ".csv",
+        # )
         val_path = os.path.join(
             paths.DATA_FINAL_SOURCE_VAL,
-            "_".join([selected_model, selected_dataset]) + ".csv",
+            selected_dataset + ".csv",
         )
         val_ds = pd.read_csv(val_path, index_col=0)
     return train_ds, val_ds
