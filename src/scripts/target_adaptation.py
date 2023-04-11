@@ -1,3 +1,4 @@
+import os
 from src.config import parameters, paths
 from src.config.parameters import AdaptationOptimizationParams
 from src.model.classifiers import (
@@ -21,7 +22,6 @@ from transformers import get_linear_schedule_with_warmup
 
 if __name__ == "__main__":
 
-    import os
 
     # mall
     mall_models = [

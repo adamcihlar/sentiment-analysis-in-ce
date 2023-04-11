@@ -91,3 +91,9 @@ def main(datasets):
 if __name__ == "__main__":
     datasets = ["facebook", "mall", "csfd"]
     main(datasets)
+
+    mall = pd.read_csv("output/train_info/finetuning/test/mall.csv", index_col=0)
+    facebook = pd.read_csv(
+        "output/train_info/finetuning/test/facebook.csv", index_col=0
+    )
+    csfd = pd.read_csv("output/train_info/finetuning/test/csfd.csv", index_col=0)
