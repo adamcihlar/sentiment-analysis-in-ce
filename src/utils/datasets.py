@@ -140,11 +140,15 @@ def get_adaptation_datasets(
             target encoder the label is "source domain"
             - this dataset is train and test at the same time, just (of course) using different labels
     """
-    replace_samples = len(target_df) > len(source_train_df)
+    source_train_df = drop_undefined_classes(source_train_df)
+    source_val_df = drop_undefined_classes(source_val_df)
     # take same amount of positive and negative samples from the source train
     unique_labels = source_train_df.label.unique()
     source_train_dfs = []
     for label in unique_labels:
+        replace_samples = len(target_df) / len(unique_labels) > sum(
+            source_train_df.label == label
+        )
         source_train_dfs.append(
             source_train_df.loc[source_train_df.label == label].sample(
                 math.ceil(len(target_df) / len(unique_labels)),
@@ -156,7 +160,6 @@ def get_adaptation_datasets(
         0 : len(target_df)
     ]
 
-    replace_samples = len(target_df) > len(source_val_df)
     if replace_samples:
         adaptation_source_val = source_val_df
     else:
@@ -164,6 +167,9 @@ def get_adaptation_datasets(
         unique_labels = source_val_df.label.unique()
         source_val_dfs = []
         for label in unique_labels:
+        replace_samples = len(target_df) / len(unique_labels) > sum(
+            source_val_df.label == label
+        )
             source_val_dfs.append(
                 source_val_df.loc[source_val_df.label == label].sample(
                     math.ceil(len(target_df) / len(unique_labels)),
