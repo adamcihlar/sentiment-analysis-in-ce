@@ -167,9 +167,9 @@ def get_adaptation_datasets(
         unique_labels = source_val_df.label.unique()
         source_val_dfs = []
         for label in unique_labels:
-        replace_samples = len(target_df) / len(unique_labels) > sum(
-            source_val_df.label == label
-        )
+            replace_samples = len(target_df) / len(unique_labels) > sum(
+                source_val_df.label == label
+            )
             source_val_dfs.append(
                 source_val_df.loc[source_val_df.label == label].sample(
                     math.ceil(len(target_df) / len(unique_labels)),
