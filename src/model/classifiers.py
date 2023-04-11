@@ -508,6 +508,8 @@ class AdaptiveSentimentClassifier:
         temperature,  # for knowledge distilation
         loss_combination_params,  # tuple with alpha and beta
         metrics,
+        target_name="",
+        source_model="",
     ):
         """
         Implements adversarial domain adaptation with distilation.
@@ -966,19 +968,22 @@ class AdaptiveSentimentClassifier:
                 for loss_name in train_mean_loss_dict
             ]
 
-            # # save all models from the epoch
-            # # encoder
-            # save_path = os.path.join(
-            #     paths.OUTPUT_MODELS_ADAPTED_ENCODER,
-            #     "_".join([self.name, start_time, str(epoch)]),
-            # )
-            # self.save_model(target_encoder, save_path)
-            # # discriminator
-            # save_path = os.path.join(
-            #     paths.OUTPUT_MODELS_ADAPTED_DISCRIMINATOR,
-            #     "_".join([self.name, start_time, str(epoch)]),
-            # )
-            # self.save_model(discriminator, save_path)
+        # save the final  model
+        # encoder
+        # TODO save with better name
+        save_path = os.path.join(
+            paths.OUTPUT_MODELS_ADAPTED_ENCODER,
+            "_".join(
+                [self.target_name, self.name, start_time, str(epoch), self.source_model]
+            ),
+        )
+        self.save_model(target_encoder, save_path)
+        # discriminator
+        save_path = os.path.join(
+            paths.OUTPUT_MODELS_ADAPTED_DISCRIMINATOR,
+            "_".join([self.name, start_time, str(epoch)]),
+        )
+        self.save_model(discriminator, save_path)
 
         # save the training info
         val_metrics_progress["val_loss"] = val_loss_mean_progress
