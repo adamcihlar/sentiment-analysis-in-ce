@@ -70,9 +70,13 @@ def read_finetuning_source(
     selected_model=parameters.FINETUNED_CHECKPOINT,
     selected_dataset=parameters.FINETUNED_DATASET,
 ):
+    # train_path = os.path.join(
+    #     paths.DATA_FINAL_SOURCE_TRAIN,
+    #     "_".join([selected_model, selected_dataset]) + ".csv",
+    # )
     train_path = os.path.join(
         paths.DATA_FINAL_SOURCE_TRAIN,
-        "_".join([selected_model, selected_dataset]) + ".csv",
+        selected_model + ".csv",
     )
     train_ds = pd.read_csv(train_path, index_col=0)
 
