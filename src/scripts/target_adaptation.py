@@ -70,9 +70,6 @@ if __name__ == "__main__":
             selected_dataset=model[2],
         )
 
-        # skip validation
-        source_val_df = source_val_df.iloc[0:2]
-
         target_df = datasets[i]().sample(AdaptationOptimizationParams.N_EMAILS)
 
         target_name = target_ds_names[i]
@@ -83,15 +80,13 @@ if __name__ == "__main__":
         cls = "_".join([model[0], model[2], model[1]])
         cls_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER, cls)
 
-        # temperatures = [1, 2, 5, 10, 20]
-        temperatures = [20]
-        # loss_combination_params_list = [
-        #     (0.2, 0.8),
-        #     (0.3, 0.7),
-        #     (0.4, 0.6),
-        #     (0.5, 0.5),
-        # ]
-        loss_combination_params_list = [(0.5, 0.5)]
+        temperatures = [1, 2, 5, 10, 20]
+        loss_combination_params_list = [
+            (0.2, 0.8),
+            (0.3, 0.7),
+            (0.4, 0.6),
+            (0.5, 0.5),
+        ]
 
         for temp in temperatures:
             for loss_comb in loss_combination_params_list:
@@ -129,8 +124,7 @@ if __name__ == "__main__":
                     lr_decay=AdaptationOptimizationParams.LR_DECAY,
                     lr_scheduler_call=get_linear_schedule_with_warmup,
                     warmup_steps_proportion=AdaptationOptimizationParams.WARM_UP_STEPS_PROPORTION,
-                    # num_epochs=AdaptationOptimizationParams.NUM_EPOCHS,
-                    num_epochs=3,
+                    num_epochs=AdaptationOptimizationParams.NUM_EPOCHS,
                     # temperature=AdaptationOptimizationParams.TEMPERATURE,
                     temperature=temp,
                     # loss_combination_params=AdaptationOptimizationParams.LOSS_COMBINATION_PARAMS,
@@ -183,8 +177,7 @@ if __name__ == "__main__":
         lr_decay=AdaptationOptimizationParams.LR_DECAY,
         lr_scheduler_call=get_linear_schedule_with_warmup,
         warmup_steps_proportion=AdaptationOptimizationParams.WARM_UP_STEPS_PROPORTION,
-        # num_epochs=AdaptationOptimizationParams.NUM_EPOCHS,
-        num_epochs=3,
+        num_epochs=AdaptationOptimizationParams.NUM_EPOCHS,
         temperature=AdaptationOptimizationParams.TEMPERATURE,
         loss_combination_params=AdaptationOptimizationParams.LOSS_COMBINATION_PARAMS,
         metrics=["f1"],

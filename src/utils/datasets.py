@@ -183,9 +183,6 @@ def get_adaptation_datasets(
 
     adaptation_target = target_df
 
-    # skip validation
-    adaptation_source_val = adaptation_source_val.iloc[0:2]
-
     return adaptation_source_train, adaptation_source_val, adaptation_target
 
 

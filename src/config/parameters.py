@@ -72,7 +72,7 @@ class AdaptationOptimizationParams:
     OPTIMIZATION = {"lr": 2e-5, "betas": (0.9, 0.999)}
     LR_DECAY = 0.9
     WARM_UP_STEPS_PROPORTION = 0.1
-    NUM_EPOCHS = 4
+    NUM_EPOCHS = 3
     TEMPERATURE = 2
     LOSS_COMBINATION_PARAMS = (0.5, 0.5)
     SKIP_VALIDATION = False
