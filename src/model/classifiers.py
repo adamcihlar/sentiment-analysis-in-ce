@@ -89,13 +89,17 @@ class ClassificationHead(torch.nn.Module):
             )
         self.num_classes = num_classes
         self.task_settings = task_settings
+        self.first_layer = self.model[0]
 
-    def forward(self, inputs):
+    def forward(self, inputs, output_hidden=False):
         logits = self.model(inputs)
         if self.task_settings == "ordinal":
             probs = torch.sigmoid(logits)
         elif self.task_settings == "multiclass":
             probs = torch.softmax(logits, dim=1)
+        if output_hidden:
+            hidden = self.first_layer(inputs)
+            return logits, probs, hidden
         return logits, probs
 
     def logits_to_scale(self, logits):
@@ -645,70 +649,70 @@ class AdaptiveSentimentClassifier:
         train_mean_loss_dict = {loss: [] for loss in ["disc", "gen", "class", "enc"]}
         train_batch_loss_dict = {loss: [] for loss in ["disc", "gen", "class", "enc"]}
 
-        #         # get the initial metrics for validation dataset
-        #         logger.info("Getting the initial metrics for validation dataset.")
-        #         target_encoder.eval()
-        #         val_epoch_loss_progress = []
-        #         progress_bar = tqdm(range(len(source_val.torch_dataloader)))
-        #         for batch in source_val.torch_dataloader:
-        #             batch = {k: v.to(device) for k, v in batch.items()}
-        #             with torch.no_grad():
-        #                 features = target_encoder(**batch)
-        #                 logits, probs = classifier(features)
-        #             cls_loss = corn_loss(logits, batch["labels"], classifier.num_classes)
-        #             predictions = corn_label_from_logits(logits).float()
-        #             progress_bar.update(1)
-        #             val_epoch_loss_progress.append(cls_loss.item())
-        #             [
-        #                 val_metrics[val_metric].add_batch(
-        #                     predictions=predictions, references=batch["labels"]
-        #                 )
-        #                 for val_metric in val_metrics
-        #             ]
-        #         [
-        #             val_metrics_progress[val_metric].append(
-        #                 val_metrics[val_metric].compute(average=val_metric)["f1"]
-        #             )
-        #             for val_metric in list(val_metrics_progress.keys())
-        #         ]
-        #         # print validation info
-        #         epoch_val_loss = np.mean(np.array(val_epoch_loss_progress))
-        #         val_loss_mean_progress.append(epoch_val_loss)
-        #         print(f"Mean validation loss of the original encoder {epoch_val_loss}")
+        # get the initial metrics for validation dataset
+        logger.info("Getting the initial metrics for validation dataset.")
+        target_encoder.eval()
+        val_epoch_loss_progress = []
+        progress_bar = tqdm(range(len(source_val.torch_dataloader)))
+        for batch in source_val.torch_dataloader:
+            batch = {k: v.to(device) for k, v in batch.items()}
+            with torch.no_grad():
+                features = target_encoder(**batch)
+                logits, probs = classifier(features)
+                cls_loss = corn_loss(logits, batch["labels"], classifier.num_classes)
+                predictions = corn_label_from_logits(logits).float()
+                progress_bar.update(1)
+                val_epoch_loss_progress.append(cls_loss.item())
+                [
+                    val_metrics[val_metric].add_batch(
+                        predictions=predictions, references=batch["labels"]
+                    )
+                    for val_metric in val_metrics
+                ]
+                [
+                    val_metrics_progress[val_metric].append(
+                        val_metrics[val_metric].compute(average=val_metric)["f1"]
+                    )
+                    for val_metric in list(val_metrics_progress.keys())
+                ]
+                # print validation info
+                epoch_val_loss = np.mean(np.array(val_epoch_loss_progress))
+                val_loss_mean_progress.append(epoch_val_loss)
+                print(f"Mean validation loss of the original encoder {epoch_val_loss}")
 
-        #         # get initial test metrics if target labels are available
-        #         if target.y is not None:
-        #             logger.info("Getting the initial metrics for target dataset.")
-        #             progress_bar = tqdm(range(len(target.torch_dataloader)))
-        #             y_pred = []
-        #             test_epoch_loss_progress = []
-        #             for batch in target.torch_dataloader:
-        #                 batch = {k: v.to(device) for k, v in batch.items()}
-        #                 with torch.no_grad():
-        #                     features = target_encoder(**batch)
-        #                     logits, probs = classifier(features)
-        #                 cls_loss = corn_loss(logits, batch["labels"], classifier.num_classes)
-        #                 predictions = corn_label_from_logits(logits).float()
-        #                 y_pred += predictions.detach().cpu().tolist()
-        #                 progress_bar.update(1)
-        #                 test_epoch_loss_progress.append(cls_loss.item())
-        #                 [
-        #                     test_metrics[test_metric].add_batch(
-        #                         predictions=predictions, references=batch["labels"]
-        #                     )
-        #                     for test_metric in test_metrics
-        #                 ]
-        #             [
-        #                 test_metrics_progress[test_metric].append(
-        #                     test_metrics[test_metric].compute(average=test_metric)["f1"]
-        #                 )
-        #                 for test_metric in list(test_metrics_progress.keys())
-        #             ]
-        #         # print test info
-        #         print(confusion_matrix(target.y, y_pred))
-        #         epoch_test_loss = np.mean(np.array(test_epoch_loss_progress))
-        #         test_loss_mean_progress.append(epoch_test_loss)
-        #         print(f"Mean test loss of the original encoder {epoch_test_loss}")
+        # get initial test metrics if target labels are available
+        if target.y is not None:
+            logger.info("Getting the initial metrics for target dataset.")
+            progress_bar = tqdm(range(len(target.torch_dataloader)))
+            y_pred = []
+            test_epoch_loss_progress = []
+            for batch in target.torch_dataloader:
+                batch = {k: v.to(device) for k, v in batch.items()}
+                with torch.no_grad():
+                    features = target_encoder(**batch)
+                    logits, probs = classifier(features)
+                cls_loss = corn_loss(logits, batch["labels"], classifier.num_classes)
+                predictions = corn_label_from_logits(logits).float()
+                y_pred += predictions.detach().cpu().tolist()
+                progress_bar.update(1)
+                test_epoch_loss_progress.append(cls_loss.item())
+                [
+                    test_metrics[test_metric].add_batch(
+                        predictions=predictions, references=batch["labels"]
+                    )
+                    for test_metric in test_metrics
+                ]
+            [
+                test_metrics_progress[test_metric].append(
+                    test_metrics[test_metric].compute(average=test_metric)["f1"]
+                )
+                for test_metric in list(test_metrics_progress.keys())
+            ]
+            # print test info
+            print(confusion_matrix(target.y, y_pred))
+            epoch_test_loss = np.mean(np.array(test_epoch_loss_progress))
+            test_loss_mean_progress.append(epoch_test_loss)
+            print(f"Mean test loss of the original encoder {epoch_test_loss}")
 
         # prepare labels for distilation
         batch_size = source_train.torch_dataloader.batch_size
@@ -1013,7 +1017,13 @@ class AdaptiveSentimentClassifier:
 
         pass
 
-    def predict(self, texts: List[str], predict_scale=True, temperature=1):
+    def predict(
+        self,
+        texts: List[str],
+        predict_scale=True,
+        temperature=1,
+        output_hidden=False,
+    ):
         self.target_encoder.eval()
         self.classifier.eval()
         device = (
@@ -1024,7 +1034,13 @@ class AdaptiveSentimentClassifier:
         X_tok = {k: torch.tensor(v).to(device) for k, v in X_tok.items()}
         with torch.no_grad():
             features = self.target_encoder(**X_tok)
-            logits, probs = self.classifier(features)
+            if output_hidden == -1:
+                logits, probs, hidden = self.classifier(features, output_hidden)
+            elif output_hidden == -2:
+                hidden = features
+                logits, probs = self.classifier(features)
+            else:
+                logits, probs = self.classifier(features)
 
         if temperature != 1:
             logits = logits / temperature
@@ -1037,10 +1053,16 @@ class AdaptiveSentimentClassifier:
         elif self.task_settings == "multiclass":
             pred = torch.argmax(logits, dim=1).float()
         pred = pred.flatten().tolist()
+        if output_hidden:
+            return pred, hidden
         return pred
 
     def bulk_predict(
-        self, dataset: Type[ClassificationDataset], predict_scale=True, temperature=1
+        self,
+        dataset: Type[ClassificationDataset],
+        predict_scale=True,
+        temperature=1,
+        output_hidden=False,
     ):
         device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -1048,13 +1070,20 @@ class AdaptiveSentimentClassifier:
         self.target_encoder.eval()
         self.classifier.eval()
         preds = []
+        hiddens = []
         n_steps = len(dataset.torch_dataloader)
         progress_bar = tqdm(range(n_steps))
         for batch in dataset.torch_dataloader:
             batch = {k: v.to(device) for k, v in batch.items()}
             with torch.no_grad():
                 features = self.target_encoder(**batch)
-                logits, probs = self.classifier(features)
+                if output_hidden == -1:
+                    logits, probs, hidden = self.classifier(features, output_hidden)
+                elif output_hidden == -2:
+                    hidden = features
+                    logits, probs = self.classifier(features)
+                else:
+                    logits, probs = self.classifier(features)
 
             if temperature != 1:
                 logits = logits / temperature
@@ -1069,9 +1098,57 @@ class AdaptiveSentimentClassifier:
             pred = pred.flatten().tolist()
             preds += pred
 
+            if output_hidden:
+                hiddens.append(hidden)
+
             progress_bar.update(1)
         dataset.y_pred = preds
+
+        if output_hidden:
+            hiddens = torch.cat(hiddens, dim=0)
+            return preds, hiddens
         return preds
+
+    def get_nn_sim_distribution(self, target_ds, layer=-1):
+        """
+        Get distribution of nearest neighbors similarities of the target
+        dataset.
+        Return vector of cosine similarities and save it as attribute.
+        """
+        preds, hiddens = self.bulk_predict(
+            target_ds, predict_scale=True, output_hidden=layer
+        )
+        pass
+
+    def nn_bulk_predict(self, target_ds, anchor_df):
+        """
+        Predict label based on the nearest neighbor.
+        Returns label and confidence that is based on the empirical p-value of
+        how likely it is that the test sample is the nearest neighbor of the anchor sample
+        the similarity and similarities distribution.
+        """
+        self.target_encoder.eval()
+        self.classifier.eval()
+        assert self.target_nn_similarities is not None
+        pass
+
+    def mix_bulk_predict(self, target_ds):
+        if self.target_nn_similarities is None:
+            get_nn_sim_distribution(target_ds)
+        y_pred_nn = self.nn_bulk_predict(target_ds)
+        y_pred_nn_w = y_pred_nn.pred * y_pred_nn.conf
+
+        cls_conf = 1 - y_pred_nn.conf
+        y_pred_cls = target_ds.y_pred
+        y_pred_cls_w = y_pred_cls * cls_conf
+
+        y_pred = y_pred_nn_w + y_pred_cls_w
+
+        pass
+
+    def mix_predict(self):
+        assert self.target_nn_similarities is not None
+        pass
 
     def save_model(self, model, path):
         os.makedirs(os.path.split(path)[0], exist_ok=True)
@@ -1089,54 +1166,48 @@ class AdaptiveSentimentClassifier:
 
 if __name__ == "__main__":
 
-    import torch
-    from transformers import (
-        AutoModel,
-        AutoModelForSequenceClassification,
-        ElectraModel,
-        ElectraTokenizerFast,
-        RobertaModel,
+    from src.reading.readers import read_csfd
+    import os
+    import pandas as pd
+    from src.config import paths, parameters
+    from src.utils.datasets import ClassificationDataset
+    from src.model.classifiers import (
+        AdaptiveSentimentClassifier,
+        ClassificationHead,
+        Discriminator,
+    )
+    from src.model.encoders import Encoder
+    from src.model.tokenizers import Tokenizer
+    from src.utils.text_preprocessing import Preprocessor
+    from src.reading.readers import read_raw_sent
+
+    model = (
+        "seznamsmall-e-czech_20230218-071534",
+        "5",
+        "csfd_facebook_mall",
+        "ordinal",
+    )
+    enc = "_".join([model[0], model[1]])
+    enc_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_ENCODER, enc)
+    cls = "_".join([model[0], model[2], model[1]])
+    cls_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER, cls)
+
+    asc = AdaptiveSentimentClassifier(
+        Preprocessor(),
+        Tokenizer(),
+        Encoder(path_to_finetuned=enc_pth),
+        ClassificationHead,
+        Discriminator(),
+        Encoder(path_to_finetuned=enc_pth),
+        classifier_checkpoint_path=cls_pth,
+        inference_mode=True,
+        task_settings=model[3],
     )
 
-    tokenizer = ElectraTokenizerFast.from_pretrained("Seznam/small-e-czech")
-    model = ElectraModel.from_pretrained("Seznam/small-e-czech")
-    electra = AutoModel.from_pretrained("Seznam/small-e-czech")
-    model = AutoModelForSequenceClassification.from_pretrained("Seznam/small-e-czech")
-    model = AutoModelForSequenceClassification.from_pretrained("ufal/robeczech-base")
-    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased")
-    roberta = AutoModel.from_pretrained("ufal/robeczech-base")
-    roberta = RobertaModel.from_pretrained(
-        "ufal/robeczech-base", output_hidden_states=True
-    )
-    bert = AutoModel.from_pretrained("bert-base-uncased")
-    model.eval()
-    model = roberta
-
-    dir(model)
-    model.encoder.layer[0]
-
-    tok = tokenizer(
-        ["Daniel Štancl mi tímto modelem udělal velkou radost", "necum"],
-        padding="max_length",
-        max_length=512,
-    )
-    tok = {k: torch.tensor(tok[k]) for k in tok}
-    out = model(**tok)
-    out[0][:, 0, :].shape
-    out[1].shape
-    out[0][:, 0, :]
-    out[1]
-    out.keys()
-    dir(out)
-    out.hidden_states[12] == out.last_hidden_state
-    out.last_hidden_state.shape
-    out.last_hidden_state[:, 0]
-    out.last_hidden_state
-    out[0].shape
-    out[0][:, 0]
-    out[0][:, 0, :]
-    dir(out)
-    out.last_hidden_state.shape
-    out.values()
-
-    pass
+    target_df = read_csfd().sample(parameters.AdaptationOptimizationParams.N_EMAILS)
+    target_df = read_csfd().sample(50)
+    target_ds = ClassificationDataset(target_df.text, None, None)
+    target_ds.preprocess(asc.preprocessor)
+    target_ds.tokenize(asc.tokenizer)
+    target_ds.create_dataset()
+    target_ds.create_dataloader(16, False)
