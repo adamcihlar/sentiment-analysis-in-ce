@@ -29,6 +29,7 @@ from src.utils.optimization import (
 from src.utils.text_preprocessing import Preprocessor
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from sklearn.decomposition import PCA
 
 
 class ClassificationHead(torch.nn.Module):
@@ -159,6 +160,10 @@ class AdaptiveSentimentClassifier:
         classifier_checkpoint_path=None,
         inference_mode=False,
         task_settings="ordinal",
+        sim_dist=None,
+        hiddens_norm=None,
+        anchor_set=None,
+        pca=None,
     ):
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
@@ -179,6 +184,9 @@ class AdaptiveSentimentClassifier:
             self.classifier = classifier
         self.target_encoder = target_encoder
         self.task_settings = task_settings
+        self.sim_dist = sim_dist
+        self.hiddens_norm = hiddens_norm
+        self.pca = pca
 
     def finetune(
         self,
@@ -1109,7 +1117,7 @@ class AdaptiveSentimentClassifier:
             return preds, hiddens
         return preds
 
-    def get_nn_sim_distribution(self, target_ds, layer=-1):
+    def get_nn_sim_distribution(self, target_ds, nn=True, layer=-1, dim_size=None):
         """
         Get distribution of nearest neighbors similarities of the target
         dataset.
@@ -1118,37 +1126,124 @@ class AdaptiveSentimentClassifier:
         preds, hiddens = self.bulk_predict(
             target_ds, predict_scale=True, output_hidden=layer
         )
-        pass
 
-    def nn_bulk_predict(self, target_ds, anchor_df):
+        if dim_size:
+            self.pca = PCA(dim_size)
+            hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
+
+        # cosine similarity
+        hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
+        cos_sim_mat = torch.mm(hiddens_norm, hiddens_norm.transpose(0, 1))
+        cos_sim_mat.fill_diagonal_(-2)
+
+        # nearest neighbor
+        if nn:
+            sim_dist = cos_sim_mat.max(dim=0).values
+        else:
+            sim_dist = cos_sim_mat[cos_sim_mat != torch.tensor(-2)]
+        self.sim_dist = sim_dist
+        self.hiddens_norm = hiddens_norm
+        self.y_anchor = target_ds.y.loc[~target_ds.y.isna()]
+        self.anchor_hidden = torch.tensor(
+            np.array(self.hiddens_norm)[~target_ds.y.isna()]
+        )
+        return sim_dist, hiddens_norm
+
+    def nn_bulk_predict(self, target_ds, nn=True, layer=-1, dim_size=None):
         """
         Predict label based on the nearest neighbor.
         Returns label and confidence that is based on the empirical p-value of
         how likely it is that the test sample is the nearest neighbor of the anchor sample
         the similarity and similarities distribution.
         """
-        self.target_encoder.eval()
-        self.classifier.eval()
-        assert self.target_nn_similarities is not None
-        pass
 
-    def mix_bulk_predict(self, target_ds):
-        if self.target_nn_similarities is None:
-            get_nn_sim_distribution(target_ds)
-        y_pred_nn = self.nn_bulk_predict(target_ds)
-        y_pred_nn_w = y_pred_nn.pred * y_pred_nn.conf
+        self.get_nn_sim_distribution(target_ds, nn=nn, layer=layer, dim_size=dim_size)
+        test_hidden = torch.tensor(np.array(self.hiddens_norm)[target_ds.y.isna()])
+        anchor_hidden = self.anchor_hidden
 
-        cls_conf = 1 - y_pred_nn.conf
-        y_pred_cls = target_ds.y_pred
+        cos_sim_anch_mat = torch.mm(test_hidden, anchor_hidden.transpose(0, 1))
+        nn_ind = cos_sim_anch_mat.argmax(dim=1)
+        y_pred_nn = target_ds.y.loc[~target_ds.y.isna()].iloc[nn_ind]
+
+        sim_dist_anch = cos_sim_anch_mat.max(dim=1).values
+        y_conf_nn = np.array(
+            [
+                (sum(val > self.sim_dist) / len(self.sim_dist)).detach()
+                for val in sim_dist_anch
+            ]
+        )
+
+        return y_pred_nn, y_conf_nn
+
+    def mix_bulk_predict(self, target_ds, dim_size=None):
+        """
+        Ensemble of nearest neighbor and classifier prediction.
+
+        target_ds should contain some labeled samples (~anchor set)
+        Based on distances in the target ds we assign weight to the nearest
+        neighbor classifier and the prediction of the neural net.
+
+        Returns series of predictions, they are also saved to the target_ds.
+        """
+        # nn prediction
+        if self.sim_dist is None:
+            get_nn_sim_distribution(target_ds, dim_size)
+        y_pred_nn, y_conf_nn = self.nn_bulk_predict(target_ds, dim_size)
+        y_pred_nn_w = y_pred_nn * y_conf_nn
+
+        # cls prediction
+        cls_conf = 1 - y_conf_nn
+        y_pred_cls = np.array(target_ds.y_pred)[list(target_ds.y.isna())]
         y_pred_cls_w = y_pred_cls * cls_conf
 
+        # combined prediction
         y_pred = y_pred_nn_w + y_pred_cls_w
 
-        pass
+        # save to target_ds
+        target_ds.y_pred = pd.Series(target_ds.y_pred, index=target_ds.y.index)
+        target_ds.y_pred.loc[~target_ds.y.isna()] = target_ds.y.loc[~target_ds.y.isna()]
+        target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred)
 
-    def mix_predict(self):
-        assert self.target_nn_similarities is not None
-        pass
+        return target_ds.y_pred
+
+    def nn_predict(
+        self,
+        texts: List[str],
+    ):
+        assert self.sim_dist is not None
+        preds, hiddens = self.predict(texts, predict_scale=True, output_hidden=layer)
+
+        if self.pca is not None:
+            hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
+
+        # cosine similarity
+        hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
+        cos_sim_anch_mat = torch.mm(hiddens_norm, self.anchor_hidden.transpose(0, 1))
+        nn_ind = cos_sim_anch_mat.argmax(dim=1)
+        y_pred_nn = target_ds.y.loc[~target_ds.y.isna()].iloc[nn_ind]
+
+        sim_dist_anch = cos_sim_anch_mat.max(dim=1).values
+        y_conf_nn = np.array(
+            [
+                (sum(val > self.sim_dist) / len(self.sim_dist)).detach()
+                for val in sim_dist_anch
+            ]
+        )
+
+        return y_pred_nn, y_conf_nn, preds
+
+    def mix_predict(
+        self,
+        texts: List[str],
+    ):
+        y_pred_nn, y_conf_nn, y_preds_cls = self.nn_predict
+        cls_conf = 1 - y_conf_nn
+        y_pred_nn_w = y_pred_nn * y_conf_nn
+        y_pred_cls_w = y_pred_cls * cls_conf
+
+        # combined prediction
+        y_pred = y_pred_nn_w + y_pred_cls_w
+        return y_pred
 
     def save_model(self, model, path):
         os.makedirs(os.path.split(path)[0], exist_ok=True)
@@ -1205,9 +1300,10 @@ if __name__ == "__main__":
     )
 
     target_df = read_csfd().sample(parameters.AdaptationOptimizationParams.N_EMAILS)
-    target_df = read_csfd().sample(50)
-    target_ds = ClassificationDataset(target_df.text, None, None)
+    target_df = read_csfd().sample(16)
+    target_ds = ClassificationDataset(target_df.text, target_df.label, None)
     target_ds.preprocess(asc.preprocessor)
     target_ds.tokenize(asc.tokenizer)
     target_ds.create_dataset()
     target_ds.create_dataloader(16, False)
+    target_ds.y.iloc[4:] = None
