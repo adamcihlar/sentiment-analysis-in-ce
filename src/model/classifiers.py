@@ -162,7 +162,7 @@ class AdaptiveSentimentClassifier:
         task_settings="ordinal",
         sim_dist=None,
         hiddens_norm=None,
-        anchor_set=None,
+        y_anchor=None,
         pca=None,
     ):
         self.preprocessor = preprocessor
@@ -1143,7 +1143,8 @@ class AdaptiveSentimentClassifier:
             sim_dist = cos_sim_mat[cos_sim_mat != torch.tensor(-2)]
         self.sim_dist = sim_dist
         self.hiddens_norm = hiddens_norm
-        self.y_anchor = target_ds.y.loc[~target_ds.y.isna()]
+        # TODO labels divided by 2 to get [0,1] scale
+        self.y_anchor = target_ds.y.loc[~target_ds.y.isna()] / 2
         self.anchor_hidden = torch.tensor(
             np.array(self.hiddens_norm)[~target_ds.y.isna()]
         )
@@ -1163,7 +1164,7 @@ class AdaptiveSentimentClassifier:
 
         cos_sim_anch_mat = torch.mm(test_hidden, anchor_hidden.transpose(0, 1))
         nn_ind = cos_sim_anch_mat.argmax(dim=1)
-        y_pred_nn = target_ds.y.loc[~target_ds.y.isna()].iloc[nn_ind]
+        y_pred_nn = self.y_anchor.iloc[nn_ind]
 
         sim_dist_anch = cos_sim_anch_mat.max(dim=1).values
         y_conf_nn = np.array(
@@ -1220,7 +1221,7 @@ class AdaptiveSentimentClassifier:
         hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
         cos_sim_anch_mat = torch.mm(hiddens_norm, self.anchor_hidden.transpose(0, 1))
         nn_ind = cos_sim_anch_mat.argmax(dim=1)
-        y_pred_nn = target_ds.y.loc[~target_ds.y.isna()].iloc[nn_ind]
+        y_pred_nn = self.y_anchor.iloc[nn_ind]
 
         sim_dist_anch = cos_sim_anch_mat.max(dim=1).values
         y_conf_nn = np.array(
