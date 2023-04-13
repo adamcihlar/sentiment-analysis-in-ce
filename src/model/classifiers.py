@@ -1187,7 +1187,7 @@ class AdaptiveSentimentClassifier:
         """
         # nn prediction
         if self.sim_dist is None:
-            get_nn_sim_distribution(target_ds, dim_size)
+            self.get_nn_sim_distribution(target_ds, dim_size)
         y_pred_nn, y_conf_nn = self.nn_bulk_predict(target_ds, dim_size)
         y_pred_nn_w = y_pred_nn * y_conf_nn
 
