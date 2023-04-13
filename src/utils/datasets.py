@@ -242,7 +242,7 @@ class ClassificationDataset:
         self.y_pred = None
         self.source = source
 
-    def evaluation_report(self, save_path):
+    def evaluation_report(self, save_path=None):
         """
         Return confusion matrix and other metrics.
         """
@@ -259,8 +259,9 @@ class ClassificationDataset:
 
         print(confusion_matrix(self.y, self.y_pred))
         json_report = json.dumps(report, indent=4)
-        with open(save_path, "w") as outfile:
-            outfile.write(json_report)
+        if save_path is not None:
+            with open(save_path, "w") as outfile:
+                outfile.write(json_report)
         pass
 
     def preprocess(self, preprocessor):
