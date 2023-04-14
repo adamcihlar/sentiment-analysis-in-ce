@@ -1316,32 +1316,29 @@ class AdaptiveSentimentClassifier:
         self.hiddens_norm = hiddens_norm
 
         hiddens_norm_df = pd.DataFrame(hiddens_norm, index=target_ds.X.index)
-        hiddens_norm_df = pd.concat([hiddens_norm_df, pd.DataFrame({'cls': list(labs)}, index=target_ds.X.index)], axis=1)
+        hiddens_norm_df = pd.concat(
+            [
+                hiddens_norm_df,
+                pd.DataFrame({"cls": list(labs)}, index=target_ds.X.index),
+            ],
+            axis=1,
+        )
         hiddens_norm_df = pd.concat([hiddens_norm_df, target_ds.y], axis=1)
 
         target_ds.y
 
-
         hdbscan = HDBSCAN(min_cluster_size=5)
         labs = hdbscan.fit_predict(hiddens_norm)
         labs_list = pd.Series(labs).unique()
-        labs_list = labs_list.loc[labs_list!=-1]
+        labs_list = labs_list.loc[labs_list != -1]
 
         for lab in labs_list:
-            hiddens_norm_subs = hiddens_norm[labs==lab]
+            hiddens_norm_subs = hiddens_norm[labs == lab]
             center = np.mean(hiddens_norm_subs, dim=0)
             center_norm = torch.nn.functional.normalize(center_norm, dim=1)
 
             cos_sim_mat = torch.mm(hiddens_norm_subs, center_norm.transpose(0, 1))
             cos_sim_mat.fill_diagonal_(-2)
-
-
-hiddens.shape
-
-        min_sizes = np.arange(
-        for
-
-
 
         pass
 
@@ -1368,7 +1365,8 @@ hiddens.shape
 if __name__ == "__main__":
 
     import plotly.express as px
-    fig = px.scatter(hiddens_norm_df, x=0, y=1, color='label')
-    fig.write_html('output/assets/csfd_target_label.html')
+
+    fig = px.scatter(hiddens_norm_df, x=0, y=1, color="label")
+    fig.write_html("output/assets/csfd_target_label.html")
 
     pass
