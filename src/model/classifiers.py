@@ -1243,6 +1243,7 @@ class AdaptiveSentimentClassifier:
     def mix_predict(
         self,
         texts: List[str],
+        scale=True,
     ):
         y_pred_nn, y_conf_nn, y_pred_cls = self.nn_predict(texts)
         cls_conf = 1 - y_conf_nn
@@ -1251,7 +1252,10 @@ class AdaptiveSentimentClassifier:
 
         # combined prediction
         y_pred = y_pred_nn_w + y_pred_cls_w
-        return y_pred
+
+        if not scale:
+            y_pred = np.floor(y_pred * 3)
+        return list(y_pred)
 
     def save_model(self, model, path):
         os.makedirs(os.path.split(path)[0], exist_ok=True)
@@ -1269,49 +1273,4 @@ class AdaptiveSentimentClassifier:
 
 if __name__ == "__main__":
 
-    from src.reading.readers import read_csfd
-    import os
-    import pandas as pd
-    from src.config import paths, parameters
-    from src.utils.datasets import ClassificationDataset
-    from src.model.classifiers import (
-        AdaptiveSentimentClassifier,
-        ClassificationHead,
-        Discriminator,
-    )
-    from src.model.encoders import Encoder
-    from src.model.tokenizers import Tokenizer
-    from src.utils.text_preprocessing import Preprocessor
-    from src.reading.readers import read_raw_sent
-
-    model = (
-        "seznamsmall-e-czech_20230218-071534",
-        "5",
-        "csfd_facebook_mall",
-        "ordinal",
-    )
-    enc = "_".join([model[0], model[1]])
-    enc_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_ENCODER, enc)
-    cls = "_".join([model[0], model[2], model[1]])
-    cls_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER, cls)
-
-    asc = AdaptiveSentimentClassifier(
-        Preprocessor(),
-        Tokenizer(),
-        Encoder(path_to_finetuned=enc_pth),
-        ClassificationHead,
-        Discriminator(),
-        Encoder(path_to_finetuned=enc_pth),
-        classifier_checkpoint_path=cls_pth,
-        inference_mode=True,
-        task_settings=model[3],
-    )
-
-    target_df = read_csfd().sample(parameters.AdaptationOptimizationParams.N_EMAILS)
-    target_df = read_csfd().sample(16)
-    target_ds = ClassificationDataset(target_df.text, target_df.label, None)
-    target_ds.preprocess(asc.preprocessor)
-    target_ds.tokenize(asc.tokenizer)
-    target_ds.create_dataset()
-    target_ds.create_dataloader(16, False)
-    target_ds.y.iloc[4:] = None
+    pass
