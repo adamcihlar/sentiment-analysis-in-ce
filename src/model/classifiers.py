@@ -164,6 +164,7 @@ class AdaptiveSentimentClassifier:
         hiddens_norm=None,
         y_anchor=None,
         pca=None,
+        hidden_layer=None,
     ):
         self.preprocessor = preprocessor
         self.tokenizer = tokenizer
@@ -187,6 +188,7 @@ class AdaptiveSentimentClassifier:
         self.sim_dist = sim_dist
         self.hiddens_norm = hiddens_norm
         self.pca = pca
+        self.layer = hidden_layer
 
     def finetune(
         self,
@@ -1126,6 +1128,7 @@ class AdaptiveSentimentClassifier:
         preds, hiddens = self.bulk_predict(
             target_ds, predict_scale=True, output_hidden=layer
         )
+        self.layer = layer
 
         if dim_size:
             self.pca = PCA(dim_size)
@@ -1211,8 +1214,12 @@ class AdaptiveSentimentClassifier:
         self,
         texts: List[str],
     ):
-        assert self.sim_dist is not None
-        preds, hiddens = self.predict(texts, predict_scale=True, output_hidden=layer)
+        assert (
+            self.sim_dist is not None
+        ), "Distribution of the nearest neighbors similarities not available. Call self.get_nn_sim_distribution(target_ds) first."
+        preds, hiddens = self.predict(
+            texts, predict_scale=True, output_hidden=self.layer
+        )
 
         if self.pca is not None:
             hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
