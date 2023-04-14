@@ -15,6 +15,7 @@ from coral_pytorch.losses import coral_loss, corn_loss
 from evaluate import load
 from loguru import logger
 from sklearn.metrics import confusion_matrix
+from hdbscan import HDBSCAN
 from src.config import paths
 from src.config.parameters import ClassifierParams, DiscriminatorParams
 from src.model.encoders import Encoder
@@ -189,6 +190,7 @@ class AdaptiveSentimentClassifier:
         self.hiddens_norm = hiddens_norm
         self.pca = pca
         self.layer = hidden_layer
+        self.dim_size = -1
 
     def finetune(
         self,
@@ -1125,17 +1127,20 @@ class AdaptiveSentimentClassifier:
         dataset.
         Return vector of cosine similarities and save it as attribute.
         """
-        preds, hiddens = self.bulk_predict(
-            target_ds, predict_scale=True, output_hidden=layer
-        )
-        self.layer = layer
+        if self.hiddens_norm is None:
+            preds, hiddens = self.bulk_predict(
+                target_ds, predict_scale=True, output_hidden=layer
+            )
+            self.layer = layer
 
-        if dim_size:
-            self.pca = PCA(dim_size)
-            hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
+            if dim_size:
+                self.pca = PCA(dim_size)
+                hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
+
+            hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
+            self.hiddens_norm = hiddens_norm
 
         # cosine similarity
-        hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
         cos_sim_mat = torch.mm(hiddens_norm, hiddens_norm.transpose(0, 1))
         cos_sim_mat.fill_diagonal_(-2)
 
@@ -1145,7 +1150,6 @@ class AdaptiveSentimentClassifier:
         else:
             sim_dist = cos_sim_mat[cos_sim_mat != torch.tensor(-2)]
         self.sim_dist = sim_dist
-        self.hiddens_norm = hiddens_norm
         # TODO labels divided by 2 to get [0,1] scale
         self.y_anchor = target_ds.y.loc[~target_ds.y.isna()] / 2
         self.anchor_hidden = torch.tensor(
@@ -1179,7 +1183,7 @@ class AdaptiveSentimentClassifier:
 
         return y_pred_nn, y_conf_nn
 
-    def mix_bulk_predict(self, target_ds, dim_size=None, scale=True):
+    def mix_bulk_predict(self, target_ds, layer=None, dim_size=-1, scale=True):
         """
         Ensemble of nearest neighbor and classifier prediction.
 
@@ -1190,7 +1194,23 @@ class AdaptiveSentimentClassifier:
         Returns series of predictions, they are also saved to the target_ds.
         """
         # nn prediction
-        y_pred_nn, y_conf_nn = self.nn_bulk_predict(target_ds, dim_size=dim_size)
+        # use the values obtained during anchor set definition if available
+        if layer is None:
+            if self.layer is not None:
+                layer = self.layer
+            else:
+                logger.error("Provide index of layer to get the embeddings from.")
+
+        if dim_size == -1:
+            dim_size = self.dim_size
+        else:
+            if 0 < dim_size < 1:
+                dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
+            self.dim_size = dim_size
+
+        y_pred_nn, y_conf_nn = self.nn_bulk_predict(
+            target_ds, layer=layer, dim_size=dim_size
+        )
         y_pred_nn_w = y_pred_nn * y_conf_nn
 
         # cls prediction
@@ -1263,6 +1283,74 @@ class AdaptiveSentimentClassifier:
             y_pred = np.floor(y_pred * 3)
         return list(y_pred)
 
+    def suggest_anchor_set(self, target_ds, layer=-1, dim_size=None):
+        """
+        Cluster the embeddings to suggest the most useful samples to label.
+
+        Forward pass of the target_ds - I should save the normalized hidden state,
+        to avoid computing is again in get_nn_sim_distribution. Save also the
+        layer and dim_size, it seems reasonable to use the same one.
+
+        Cluster - what algo? Set clusters count? The goal is to find very dense
+        clusters that I want to influence with the nn prediction, I do not want
+        to change max number of predictions but max number with high
+        confidence - HDBSCAN. What hyperparameters
+        Then centroids of the clusters.
+        Samples closest to the centroids are the samples to label.
+        """
+        self.layer = layer
+        preds, hiddens = self.bulk_predict(
+            target_ds, predict_scale=True, output_hidden=layer
+        )
+
+        # if dim_size is ratio, compute the corresponding dim_size
+        if 0 < dim_size < 1:
+            dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
+        self.dim_size = dim_size
+
+        if dim_size:
+            self.pca = PCA(dim_size)
+            hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
+
+        hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
+        self.hiddens_norm = hiddens_norm
+
+        hiddens_norm_df = pd.DataFrame(hiddens_norm, index=target_ds.X.index)
+        hiddens_norm_df = pd.concat([hiddens_norm_df, pd.DataFrame({'cls': list(labs)}, index=target_ds.X.index)], axis=1)
+        hiddens_norm_df = pd.concat([hiddens_norm_df, target_ds.y], axis=1)
+
+        target_ds.y
+
+
+        hdbscan = HDBSCAN(min_cluster_size=5)
+        labs = hdbscan.fit_predict(hiddens_norm)
+        labs_list = pd.Series(labs).unique()
+        labs_list = labs_list.loc[labs_list!=-1]
+
+        for lab in labs_list:
+            hiddens_norm_subs = hiddens_norm[labs==lab]
+            center = np.mean(hiddens_norm_subs, dim=0)
+            center_norm = torch.nn.functional.normalize(center_norm, dim=1)
+
+            cos_sim_mat = torch.mm(hiddens_norm_subs, center_norm.transpose(0, 1))
+            cos_sim_mat.fill_diagonal_(-2)
+
+
+hiddens.shape
+
+        min_sizes = np.arange(
+        for
+
+
+
+        pass
+
+    def _get_pca_dim_from_variance_ratio(self, hiddens, ratio):
+        pca = PCA(min(hiddens.shape))
+        pca.fit(hiddens)
+        dim = sum(np.cumsum(pca.explained_variance_ratio_) < ratio) + 1
+        return dim
+
     def save_model(self, model, path):
         os.makedirs(os.path.split(path)[0], exist_ok=True)
         saved = 0
@@ -1278,5 +1366,9 @@ class AdaptiveSentimentClassifier:
 
 
 if __name__ == "__main__":
+
+    import plotly.express as px
+    fig = px.scatter(hiddens_norm_df, x=0, y=1, color='label')
+    fig.write_html('output/assets/csfd_target_label.html')
 
     pass
