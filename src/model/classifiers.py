@@ -1179,7 +1179,7 @@ class AdaptiveSentimentClassifier:
 
         return y_pred_nn, y_conf_nn
 
-    def mix_bulk_predict(self, target_ds, dim_size=None):
+    def mix_bulk_predict(self, target_ds, dim_size=None, scale=True):
         """
         Ensemble of nearest neighbor and classifier prediction.
 
@@ -1190,9 +1190,7 @@ class AdaptiveSentimentClassifier:
         Returns series of predictions, they are also saved to the target_ds.
         """
         # nn prediction
-        if self.sim_dist is None:
-            self.get_nn_sim_distribution(target_ds, dim_size)
-        y_pred_nn, y_conf_nn = self.nn_bulk_predict(target_ds, dim_size)
+        y_pred_nn, y_conf_nn = self.nn_bulk_predict(target_ds, dim_size=dim_size)
         y_pred_nn_w = y_pred_nn * y_conf_nn
 
         # cls prediction
@@ -1205,8 +1203,16 @@ class AdaptiveSentimentClassifier:
 
         # save to target_ds
         target_ds.y_pred = pd.Series(target_ds.y_pred, index=target_ds.y.index)
-        target_ds.y_pred.loc[~target_ds.y.isna()] = target_ds.y.loc[~target_ds.y.isna()]
-        target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred)
+        if scale:
+            target_ds.y_pred.loc[~target_ds.y.isna()] = (
+                target_ds.y.loc[~target_ds.y.isna()] / 2
+            )
+            target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred)
+        else:
+            target_ds.y_pred.loc[~target_ds.y.isna()] = target_ds.y.loc[
+                ~target_ds.y.isna()
+            ]
+            target_ds.y_pred.loc[target_ds.y.isna()] = np.floor(y_pred * 3)
 
         return target_ds.y_pred
 
