@@ -1244,7 +1244,7 @@ class AdaptiveSentimentClassifier:
         self,
         texts: List[str],
     ):
-        y_pred_nn, y_conf_nn, y_preds_cls = self.nn_predict(texts)
+        y_pred_nn, y_conf_nn, y_pred_cls = self.nn_predict(texts)
         cls_conf = 1 - y_conf_nn
         y_pred_nn_w = y_pred_nn * y_conf_nn
         y_pred_cls_w = y_pred_cls * cls_conf
