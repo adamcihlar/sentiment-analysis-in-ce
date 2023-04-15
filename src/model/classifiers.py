@@ -31,6 +31,7 @@ from src.utils.text_preprocessing import Preprocessor
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score, silhouette_samples
 from scipy.spatial import distance_matrix
 
 
@@ -1305,39 +1306,48 @@ class AdaptiveSentimentClassifier:
 
         if dim_size:
             self.pca = PCA(dim_size)
-            hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
+            hiddens = self.pca.fit_transform(hiddens)
 
         self.hiddens = hiddens
 
-        # TODO continue here
-        # change the cosine similarities to euclidian distances
+        # cluster the embeddings
+        logger.info("Clustering the embeddings.")
+        sil_scores = []
+        cluster_sizes = []
+        for min_cl_size in tqdm(range(2, round(len(self.hiddens) / 100) + 1)):
+            hdbscan = HDBSCAN(min_cluster_size=min_cl_size, min_samples=1)
+            labs = hdbscan.fit_predict(hiddens)
+            labs_list = pd.Series(labs).unique()
+            # I need at least n_samples/100 anchor samples suggestions
+            if (len(labs_list) - 1) > round(len(self.hiddens) / 100):
+                cluster_sizes.append(min_cl_size)
+                hiddens_cls = hiddens[labs != -1]
+                sil_scores.append(silhouette_score(hiddens_cls, labs[labs != -1]))
+        cl_size = cluster_sizes[np.array(sil_scores).argmax()]
 
-        hdbscan = HDBSCAN(min_cluster_size=4)
+        hdbscan = HDBSCAN(min_cluster_size=cl_size, min_samples=1)
         labs = hdbscan.fit_predict(hiddens)
         labs_list = pd.Series(labs).unique()
-        labs_list = labs_list.loc[labs_list != -1]
+        sil_samples = silhouette_samples(hiddens, labs)
 
-        for lab in labs_list:
+        samples_to_label = []
+        cls_sil_scores = []
+        cls_sizes = []
+        for lab in labs_list[labs_list != -1]:
+            index_subs = target_ds.X.index[labs == lab]
             hiddens_subs = hiddens[labs == lab]
-            center = np.mean(hiddens_subs, dim=0)
+            center = np.mean(hiddens_subs, axis=0).reshape(1, -1)
+            cls_sizes.append(len(hiddens_subs))
+            cls_sil_scores.append(sil_samples[labs == lab].mean())
+            samples_to_label.append(
+                index_subs[distance_matrix(hiddens_subs, center).argmin()]
+            )
 
-            # euclidian distances
-            # closest sample from the subset is the centroid
-            # save the centroid to list
-            # create list of ids from the centroids
-            # save it to target_ds
-            # create methods in target_ds for the anchor set
-
-        hiddens_df = pd.DataFrame(hiddens, index=target_ds.X.index)
-        hiddens_df = pd.concat(
-            [
-                hiddens_df,
-                pd.DataFrame({"cls": list(labs)}, index=target_ds.X.index).astype(str),
-            ],
-            axis=1,
+        target_ds.anchor_suggestions = pd.DataFrame(
+            {"density": cls_sil_scores, "size": cls_sizes}, index=samples_to_label
         )
-        hiddens_df = pd.concat([hiddens_df, target_ds.y], axis=1)
 
+        target_ds.output_anchor_suggestions()
         pass
 
     def _get_pca_dim_from_variance_ratio(self, hiddens, ratio):
@@ -1364,10 +1374,20 @@ if __name__ == "__main__":
 
     import plotly.express as px
 
+    hiddens_df = pd.DataFrame(hiddens, index=target_ds.X.index)
+    hiddens_df = pd.concat(
+        [
+            hiddens_df,
+            pd.DataFrame({"cls": list(labs)}, index=target_ds.X.index).astype(str),
+        ],
+        axis=1,
+    )
+    hiddens_df = pd.concat([hiddens_df, target_ds.y], axis=1)
+
     fig = px.scatter(hiddens_df, x=0, y=1, color="label")
-    fig.write_html("output/assets/csfd_target_label.html")
+    fig.write_html("output/assets/csfd_target_label_2.html")
 
     fig = px.scatter(hiddens_df, x=0, y=1, color="cls")
-    fig.write_html("output/assets/csfd_target_clustering.html")
+    fig.write_html("output/assets/csfd_target_clustering_2.html")
 
     pass
