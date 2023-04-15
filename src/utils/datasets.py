@@ -352,11 +352,24 @@ class ClassificationDataset:
         pass
 
     def read_user_input(self):
-        onlyfiles = [f for f in os.listdir(paths.INPUT) if os.path.isfile(os.path.join(paths.INPUT, f))]
-        pd.read_csv
+        files = [
+            f
+            for f in os.listdir(paths.INPUT)
+            if os.path.isfile(os.path.join(paths.INPUT, f))
+        ]
+        if len(files) == 1:
+            target = pd.read_csv(files)
+            self.X = target.iloc[:, 0]
+            if len(target.columns) > 1:
+                self.y = target.iloc[:, 1]
+        else:
+            logger.error(
+                f"Please put only one csv file that you want to evaluate to {paths.INPUT} directory"
+            )
         pass
 
     def read_anchor_set(self):
+        pass
 
 
 def get_datasets_ready_for_finetuning(
