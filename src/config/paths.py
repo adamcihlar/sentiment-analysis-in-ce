@@ -107,3 +107,7 @@ OUTPUT_PROD_CLASSIFIER = os.path.join(OUTPUT_PROD, "classifier")
 # ASSETS
 OUTPUT_ASSETS = os.path.join(OUTPUT, "assets")
 OUTPUT_ASSETS_TEST_REPORTS = os.path.join(OUTPUT_ASSETS, "test_reports")
+
+# INPUT
+INPUT = "input"
+INPUT_ANCHOR = os.path.join(INPUT, "anchor")

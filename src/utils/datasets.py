@@ -338,6 +338,26 @@ class ClassificationDataset:
                 logger.info(f"Dataset saved at {path}.")
         pass
 
+    def output_anchor_suggestions(self):
+        text_df = pd.concat([self.X, self.anchor_suggestions], axis=1).dropna()
+        text_to_label = text_df.sort_values("density", ascending=False).drop(
+            columns=["density", "size"]
+        )
+        text_to_label["label"] = np.nan
+        save_path = os.path.join(paths.INPUT_ANCHOR, "anchor_set.csv")
+        text_to_label.to_csv(save_path)
+        logger.info(
+            f"Suggested samples for labelling saved to {save_path}. Label as much as you wish, preferably beginning from the top and save the file."
+        )
+        pass
+
+    def read_user_input(self):
+        onlyfiles = [f for f in os.listdir(paths.INPUT) if os.path.isfile(os.path.join(paths.INPUT, f))]
+        pd.read_csv
+        pass
+
+    def read_anchor_set(self):
+
 
 def get_datasets_ready_for_finetuning(
     datasets: List[pd.DataFrame],
