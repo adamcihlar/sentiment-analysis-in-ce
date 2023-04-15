@@ -1297,7 +1297,7 @@ class AdaptiveSentimentClassifier:
         Then centroids of the clusters.
         Samples closest to the centroids are the samples to label.
         """
-        if self.hiddens_full is None and self.layer == layer:
+        if self.hiddens_full is None or self.layer != layer:
             preds, hiddens = self.bulk_predict(
                 target_ds, predict_scale=True, output_hidden=layer
             )
