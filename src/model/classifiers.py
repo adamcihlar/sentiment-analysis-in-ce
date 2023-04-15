@@ -1325,29 +1325,35 @@ class AdaptiveSentimentClassifier:
             labs = hdbscan.fit_predict(hiddens)
             labs_list = pd.Series(labs).unique()
             # I need at least n_samples/100 anchor samples suggestions
-            if (len(labs_list) - 1) > round(len(self.hiddens) / 100):
+            if (len(labs_list) - 1) >= 100:  # round(len(self.hiddens) / 100):
                 cluster_sizes.append(min_cl_size)
                 hiddens_cls = hiddens[labs != -1]
                 sil_scores.append(silhouette_score(hiddens_cls, labs[labs != -1]))
-        cl_size = cluster_sizes[np.array(sil_scores).argmax()]
 
-        hdbscan = HDBSCAN(min_cluster_size=cl_size, min_samples=1)
-        labs = hdbscan.fit_predict(hiddens)
-        labs_list = pd.Series(labs).unique()
-        sil_samples = silhouette_samples(hiddens, labs)
+        if len(sil_scores) == 0:
+            samples_to_label = pd.Series(target_ds.X.index).sample(100)
+            cls_sil_scores = np.zeros(100)
+            cls_sizes = np.zeros(100)
+        else:
+            cl_size = cluster_sizes[np.array(sil_scores).argmax()]
 
-        samples_to_label = []
-        cls_sil_scores = []
-        cls_sizes = []
-        for lab in labs_list[labs_list != -1]:
-            index_subs = target_ds.X.index[labs == lab]
-            hiddens_subs = hiddens[labs == lab]
-            center = np.mean(hiddens_subs, axis=0).reshape(1, -1)
-            cls_sizes.append(len(hiddens_subs))
-            cls_sil_scores.append(sil_samples[labs == lab].mean())
-            samples_to_label.append(
-                index_subs[distance_matrix(hiddens_subs, center).argmin()]
-            )
+            hdbscan = HDBSCAN(min_cluster_size=cl_size, min_samples=1)
+            labs = hdbscan.fit_predict(hiddens)
+            labs_list = pd.Series(labs).unique()
+            sil_samples = silhouette_samples(hiddens, labs)
+
+            samples_to_label = []
+            cls_sil_scores = []
+            cls_sizes = []
+            for lab in labs_list[labs_list != -1]:
+                index_subs = target_ds.X.index[labs == lab]
+                hiddens_subs = hiddens[labs == lab]
+                center = np.mean(hiddens_subs, axis=0).reshape(1, -1)
+                cls_sizes.append(len(hiddens_subs))
+                cls_sil_scores.append(sil_samples[labs == lab].mean())
+                samples_to_label.append(
+                    index_subs[distance_matrix(hiddens_subs, center).argmin()]
+                )
 
         target_ds.anchor_suggestions = pd.DataFrame(
             {"density": cls_sil_scores, "size": cls_sizes}, index=samples_to_label
