@@ -362,13 +362,30 @@ class ClassificationDataset:
             self.X = target.iloc[:, 0]
             if len(target.columns) > 1:
                 self.y = target.iloc[:, 1]
+            else:
+                self.y = pd.Series(np.nan, index=target.index)
         else:
             logger.error(
-                f"Please put only one csv file that you want to evaluate to {paths.INPUT} directory"
+                f"Please put only one csv file that you want to evaluate to {paths.INPUT} directory."
             )
         pass
 
     def read_anchor_set(self):
+        assert self.X is not None
+        self.y = pd.Series(np.nan, index=self.X.index)
+        files = [
+            f
+            for f in os.listdir(paths.INPUT_ANCHOR)
+            if os.path.isfile(os.path.join(paths.INPUT_ANCHOR, f))
+        ]
+        if len(files) == 1:
+            anchor = pd.read_csv(files, index_col=0)
+            self.y = pd.concat([self.y, anchor], axis=1).iloc[:, 1]
+        else:
+            logger.error(
+                f"Please put only one csv file with anchor samples to {paths.INPUT_ANCHOR} directory."
+            )
+
         pass
 
 
