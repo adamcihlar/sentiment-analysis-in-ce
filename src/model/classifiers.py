@@ -1137,12 +1137,11 @@ class AdaptiveSentimentClassifier:
             )
             self.layer = layer
 
-            # if dim_size is ratio, compute the corresponding dim_size
-            if 0 < dim_size < 1:
-                dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
-            self.dim_size = dim_size
-
             if dim_size:
+                # if dim_size is ratio, compute the corresponding dim_size
+                if 0 < dim_size < 1:
+                    dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
+                self.dim_size = dim_size
                 self.pca = PCA(dim_size)
                 hiddens = self.pca.fit_transform(hiddens)
 
@@ -1307,12 +1306,11 @@ class AdaptiveSentimentClassifier:
             hiddens = self.hiddens_full
         self.layer = layer
 
-        # if dim_size is ratio, compute the corresponding dim_size
-        if 0 < dim_size < 1:
-            dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
-        self.dim_size = dim_size
-
         if dim_size:
+            # if dim_size is ratio, compute the corresponding dim_size
+            if 0 < dim_size < 1:
+                dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
+            self.dim_size = dim_size
             self.pca = PCA(dim_size)
             hiddens = self.pca.fit_transform(hiddens)
 
