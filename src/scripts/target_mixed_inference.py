@@ -25,6 +25,11 @@ model = (
     "mall_facebook",
     "ordinal",
 )
+dataset = read_csfd
+dim_size = 0.98
+layer = -1
+samples_labelled = 50
+
 enc = "_".join([model[0], model[1]])
 enc_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_ENCODER, enc)
 cls = "_".join([model[0], model[2], model[1]])
@@ -42,31 +47,35 @@ asc = AdaptiveSentimentClassifier(
     task_settings=model[3],
 )
 
-target_df = read_csfd().sample(parameters.AdaptationOptimizationParams.N_EMAILS)
-y_true = target_df.label.copy()
-target_ds = ClassificationDataset(target_df.text, target_df.label, None)
+target_df = dataset().sample(parameters.AdaptationOptimizationParams.N_EMAILS)
+target_df.text.to_csv(os.path.join(paths.INPUT, "hello.csv"), index=False)
+y_true = target_df.label.copy().reset_index(drop=True)
+
+target_ds = ClassificationDataset(None)
+target_ds.read_user_input()
+
 target_ds.preprocess(asc.preprocessor)
 target_ds.tokenize(asc.tokenizer)
 target_ds.create_dataset()
 target_ds.create_dataloader(16, False)
-target_ds.y.iloc[40:] = None
+
+# output samples for labelling
+asc.suggest_anchor_set(target_ds, layer=layer, dim_size=dim_size)
+
+### THIS WILL BE DONE BY USER
+anch = pd.read_csv(os.path.join(paths.INPUT_ANCHOR, "anchor_set.csv"), index_col=0)
+anch.label.iloc[0:samples_labelled] = y_true.loc[
+    anch.label.iloc[0:samples_labelled].index
+]
+anch.to_csv(os.path.join(paths.INPUT_ANCHOR, "anchor_set.csv"))
+###
+
+# read labelled subset
+target_ds.read_anchor_set()
 
 # bulk inference
-y_pred = asc.mix_bulk_predict(target_ds, dim_size=0.999, layer=-2)
-
-y_pred = np.floor(y_pred * 3)
-target_ds.y_pred = y_pred
-target_ds.y
-
-# one sample
-asc.get_nn_sim_distribution(target_ds)
-asc.predict(["necum", "hruza"])
-
-asc.mix_predict(["super", "hruza"], scale=False)
-
-# TODO scale to labels to get report !!!!!
+y_pred = asc.mix_bulk_predict(target_ds, scale=False)
 
 target_ds.y = y_true
-target_ds
 
 target_ds.evaluation_report()
