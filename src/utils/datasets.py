@@ -353,12 +353,12 @@ class ClassificationDataset:
 
     def read_user_input(self):
         files = [
-            f
+            os.path.join(paths.INPUT, f)
             for f in os.listdir(paths.INPUT)
             if os.path.isfile(os.path.join(paths.INPUT, f))
         ]
         if len(files) == 1:
-            target = pd.read_csv(files)
+            target = pd.read_csv(files[0])
             self.X = target.iloc[:, 0]
             if len(target.columns) > 1:
                 self.y = target.iloc[:, 1]
