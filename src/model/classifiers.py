@@ -1189,7 +1189,7 @@ class AdaptiveSentimentClassifier:
 
         return y_pred_nn, y_conf_nn
 
-    def mix_bulk_predict(self, target_ds, layer=None, dim_size=-1, scale=True):
+    def mix_bulk_predict(self, target_ds, nn=True, layer=None, dim_size=-1, scale=True):
         """
         Ensemble of nearest neighbor and classifier prediction.
 
@@ -1208,7 +1208,7 @@ class AdaptiveSentimentClassifier:
                 logger.error("Provide index of layer to get the embeddings from.")
 
         y_pred_nn, y_conf_nn = self.nn_bulk_predict(
-            target_ds, layer=layer, dim_size=dim_size
+            target_ds, nn=nn, layer=layer, dim_size=dim_size
         )
         y_pred_nn_w = y_pred_nn * y_conf_nn
 
@@ -1296,14 +1296,14 @@ class AdaptiveSentimentClassifier:
         Then centroids of the clusters.
         Samples closest to the centroids are the samples to label.
         """
-        self.layer = layer
-        if self.hiddens_full is None:
+        if self.hiddens_full is None and self.layer == layer:
             preds, hiddens = self.bulk_predict(
                 target_ds, predict_scale=True, output_hidden=layer
             )
             self.hiddens_full = hiddens
         else:
             hiddens = self.hiddens_full
+        self.layer = layer
 
         # if dim_size is ratio, compute the corresponding dim_size
         if 0 < dim_size < 1:
