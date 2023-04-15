@@ -165,6 +165,7 @@ class AdaptiveSentimentClassifier:
         task_settings="ordinal",
         dist_dist=None,
         hiddens=None,
+        hiddens_full=None,
         y_anchor=None,
         pca=None,
         hidden_layer=None,
@@ -190,6 +191,7 @@ class AdaptiveSentimentClassifier:
         self.task_settings = task_settings
         self.dist_dist = dist_dist
         self.hiddens = hiddens
+        self.hiddens_full = hiddens_full
         self.pca = pca
         self.layer = hidden_layer
         self.dim_size = -1
