@@ -1145,6 +1145,8 @@ class AdaptiveSentimentClassifier:
                 hiddens = self.pca.fit_transform(hiddens)
 
             self.hiddens = hiddens
+        else:
+            hiddens = self.hiddens
 
         # euclidian distances
         euc_dist_mat = distance_matrix(hiddens, hiddens)
