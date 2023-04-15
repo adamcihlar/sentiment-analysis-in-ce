@@ -1204,13 +1204,6 @@ class AdaptiveSentimentClassifier:
             else:
                 logger.error("Provide index of layer to get the embeddings from.")
 
-        if dim_size == -1:
-            dim_size = self.dim_size
-        else:
-            if 0 < dim_size < 1:
-                dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
-            self.dim_size = dim_size
-
         y_pred_nn, y_conf_nn = self.nn_bulk_predict(
             target_ds, layer=layer, dim_size=dim_size
         )
