@@ -31,6 +31,7 @@ from src.utils.text_preprocessing import Preprocessor
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from sklearn.decomposition import PCA
+from scipy.spatial import distance_matrix
 
 
 class ClassificationHead(torch.nn.Module):
@@ -161,8 +162,8 @@ class AdaptiveSentimentClassifier:
         classifier_checkpoint_path=None,
         inference_mode=False,
         task_settings="ordinal",
-        sim_dist=None,
-        hiddens_norm=None,
+        dist_dist=None,
+        hiddens=None,
         y_anchor=None,
         pca=None,
         hidden_layer=None,
@@ -186,8 +187,8 @@ class AdaptiveSentimentClassifier:
             self.classifier = classifier
         self.target_encoder = target_encoder
         self.task_settings = task_settings
-        self.sim_dist = sim_dist
-        self.hiddens_norm = hiddens_norm
+        self.dist_dist = dist_dist
+        self.hiddens = hiddens
         self.pca = pca
         self.layer = hidden_layer
         self.dim_size = -1
@@ -1118,44 +1119,46 @@ class AdaptiveSentimentClassifier:
 
         if output_hidden:
             hiddens = torch.cat(hiddens, dim=0)
-            return preds, hiddens
+            return preds, hiddens.detach().numpy()
         return preds
 
-    def get_nn_sim_distribution(self, target_ds, nn=True, layer=-1, dim_size=None):
+    def get_nn_dist_distribution(self, target_ds, nn=True, layer=-1, dim_size=None):
         """
         Get distribution of nearest neighbors similarities of the target
         dataset.
         Return vector of cosine similarities and save it as attribute.
         """
-        if self.hiddens_norm is None:
+        if self.hiddens is None:
             preds, hiddens = self.bulk_predict(
                 target_ds, predict_scale=True, output_hidden=layer
             )
             self.layer = layer
 
+            # if dim_size is ratio, compute the corresponding dim_size
+            if 0 < dim_size < 1:
+                dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
+            self.dim_size = dim_size
+
             if dim_size:
                 self.pca = PCA(dim_size)
-                hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
+                hiddens = self.pca.fit_transform(hiddens)
 
-            hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
-            self.hiddens_norm = hiddens_norm
+            self.hiddens = hiddens
 
-        # cosine similarity
-        cos_sim_mat = torch.mm(hiddens_norm, hiddens_norm.transpose(0, 1))
-        cos_sim_mat.fill_diagonal_(-2)
+        # euclidian distances
+        euc_dist_mat = distance_matrix(hiddens, hiddens)
+        np.fill_diagonal(euc_dist_mat, np.inf)
 
         # nearest neighbor
         if nn:
-            sim_dist = cos_sim_mat.max(dim=0).values
+            dist_dist = euc_dist_mat.min(axis=0)
         else:
-            sim_dist = cos_sim_mat[cos_sim_mat != torch.tensor(-2)]
-        self.sim_dist = sim_dist
+            dist_dist = euc_dist_mat[euc_dist_mat != np.inf]
+        self.dist_dist = dist_dist
         # TODO labels divided by 2 to get [0,1] scale
         self.y_anchor = target_ds.y.loc[~target_ds.y.isna()] / 2
-        self.anchor_hidden = torch.tensor(
-            np.array(self.hiddens_norm)[~target_ds.y.isna()]
-        )
-        return sim_dist, hiddens_norm
+        self.anchor_hidden = self.hiddens[~target_ds.y.isna()]
+        return dist_dist, hiddens
 
     def nn_bulk_predict(self, target_ds, nn=True, layer=-1, dim_size=None):
         """
@@ -1165,19 +1168,19 @@ class AdaptiveSentimentClassifier:
         the similarity and similarities distribution.
         """
 
-        self.get_nn_sim_distribution(target_ds, nn=nn, layer=layer, dim_size=dim_size)
-        test_hidden = torch.tensor(np.array(self.hiddens_norm)[target_ds.y.isna()])
+        self.get_nn_dist_distribution(target_ds, nn=nn, layer=layer, dim_size=dim_size)
+        test_hidden = self.hiddens[target_ds.y.isna()]
         anchor_hidden = self.anchor_hidden
 
-        cos_sim_anch_mat = torch.mm(test_hidden, anchor_hidden.transpose(0, 1))
-        nn_ind = cos_sim_anch_mat.argmax(dim=1)
+        euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
+        nn_ind = euc_dist_anch_mat.argmin(axis=1)
         y_pred_nn = self.y_anchor.iloc[nn_ind]
 
-        sim_dist_anch = cos_sim_anch_mat.max(dim=1).values
+        dist_dist_anch = euc_dist_anch_mat.min(axis=1)
         y_conf_nn = np.array(
             [
-                (sum(val > self.sim_dist) / len(self.sim_dist)).detach()
-                for val in sim_dist_anch
+                (sum(val <= self.dist_dist) / len(self.dist_dist))
+                for val in dist_dist_anch
             ]
         )
 
@@ -1232,7 +1235,7 @@ class AdaptiveSentimentClassifier:
             target_ds.y_pred.loc[~target_ds.y.isna()] = target_ds.y.loc[
                 ~target_ds.y.isna()
             ]
-            target_ds.y_pred.loc[target_ds.y.isna()] = np.floor(y_pred * 3)
+            target_ds.y_pred.loc[target_ds.y.isna()] = list(np.floor(y_pred * 3))
 
         return target_ds.y_pred
 
@@ -1241,26 +1244,25 @@ class AdaptiveSentimentClassifier:
         texts: List[str],
     ):
         assert (
-            self.sim_dist is not None
-        ), "Distribution of the nearest neighbors similarities not available. Call self.get_nn_sim_distribution(target_ds) first."
+            self.dist_dist is not None
+        ), "Distribution of the nearest neighbors similarities not available. Call self.get_nn_dist_distribution(target_ds) first."
         preds, hiddens = self.predict(
             texts, predict_scale=True, output_hidden=self.layer
         )
 
         if self.pca is not None:
-            hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
+            hiddens = self.pca.transform(hiddens)
 
-        # cosine similarity
-        hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
-        cos_sim_anch_mat = torch.mm(hiddens_norm, self.anchor_hidden.transpose(0, 1))
-        nn_ind = cos_sim_anch_mat.argmax(dim=1)
+        # euclidian distance
+        euc_dist_anch_mat = distance_matrix(hiddens, self.anchor_hidden)
+        nn_ind = euc_dist_anch_mat.argmin(dim=1)
         y_pred_nn = self.y_anchor.iloc[nn_ind]
 
-        sim_dist_anch = cos_sim_anch_mat.max(dim=1).values
+        euc_dist_anch = euc_dist_anch_mat.min(dim=1).values
         y_conf_nn = np.array(
             [
-                (sum(val > self.sim_dist) / len(self.sim_dist)).detach()
-                for val in sim_dist_anch
+                (sum(val <= self.dist_dist) / len(self.dist_dist)).detach()
+                for val in dist_dist_anch
             ]
         )
 
@@ -1288,7 +1290,7 @@ class AdaptiveSentimentClassifier:
         Cluster the embeddings to suggest the most useful samples to label.
 
         Forward pass of the target_ds - I should save the normalized hidden state,
-        to avoid computing is again in get_nn_sim_distribution. Save also the
+        to avoid computing is again in get_nn_dist_distribution. Save also the
         layer and dim_size, it seems reasonable to use the same one.
 
         Cluster - what algo? Set clusters count? The goal is to find very dense
@@ -1312,33 +1314,36 @@ class AdaptiveSentimentClassifier:
             self.pca = PCA(dim_size)
             hiddens = torch.tensor(self.pca.fit_transform(hiddens.detach().numpy()))
 
-        hiddens_norm = torch.nn.functional.normalize(hiddens, dim=1)
-        self.hiddens_norm = hiddens_norm
+        self.hiddens = hiddens
 
-        hiddens_norm_df = pd.DataFrame(hiddens_norm, index=target_ds.X.index)
-        hiddens_norm_df = pd.concat(
-            [
-                hiddens_norm_df,
-                pd.DataFrame({"cls": list(labs)}, index=target_ds.X.index),
-            ],
-            axis=1,
-        )
-        hiddens_norm_df = pd.concat([hiddens_norm_df, target_ds.y], axis=1)
+        # TODO continue here
+        # change the cosine similarities to euclidian distances
 
-        target_ds.y
-
-        hdbscan = HDBSCAN(min_cluster_size=5)
-        labs = hdbscan.fit_predict(hiddens_norm)
+        hdbscan = HDBSCAN(min_cluster_size=4)
+        labs = hdbscan.fit_predict(hiddens)
         labs_list = pd.Series(labs).unique()
         labs_list = labs_list.loc[labs_list != -1]
 
         for lab in labs_list:
-            hiddens_norm_subs = hiddens_norm[labs == lab]
-            center = np.mean(hiddens_norm_subs, dim=0)
-            center_norm = torch.nn.functional.normalize(center_norm, dim=1)
+            hiddens_subs = hiddens[labs == lab]
+            center = np.mean(hiddens_subs, dim=0)
 
-            cos_sim_mat = torch.mm(hiddens_norm_subs, center_norm.transpose(0, 1))
-            cos_sim_mat.fill_diagonal_(-2)
+            # euclidian distances
+            # closest sample from the subset is the centroid
+            # save the centroid to list
+            # create list of ids from the centroids
+            # save it to target_ds
+            # create methods in target_ds for the anchor set
+
+        hiddens_df = pd.DataFrame(hiddens, index=target_ds.X.index)
+        hiddens_df = pd.concat(
+            [
+                hiddens_df,
+                pd.DataFrame({"cls": list(labs)}, index=target_ds.X.index).astype(str),
+            ],
+            axis=1,
+        )
+        hiddens_df = pd.concat([hiddens_df, target_ds.y], axis=1)
 
         pass
 
@@ -1366,7 +1371,10 @@ if __name__ == "__main__":
 
     import plotly.express as px
 
-    fig = px.scatter(hiddens_norm_df, x=0, y=1, color="label")
+    fig = px.scatter(hiddens_df, x=0, y=1, color="label")
     fig.write_html("output/assets/csfd_target_label.html")
+
+    fig = px.scatter(hiddens_df, x=0, y=1, color="cls")
+    fig.write_html("output/assets/csfd_target_clustering.html")
 
     pass
