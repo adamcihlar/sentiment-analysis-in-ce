@@ -374,13 +374,13 @@ class ClassificationDataset:
         assert self.X is not None
         self.y = pd.Series(np.nan, index=self.X.index)
         files = [
-            f
+            os.path.join(paths.INPUT_ANCHOR, f)
             for f in os.listdir(paths.INPUT_ANCHOR)
             if os.path.isfile(os.path.join(paths.INPUT_ANCHOR, f))
         ]
         if len(files) == 1:
-            anchor = pd.read_csv(files, index_col=0)
-            self.y = pd.concat([self.y, anchor], axis=1).iloc[:, 1]
+            anchor = pd.read_csv(files[0], index_col=0)
+            self.y = pd.concat([self.y, anchor], axis=1).iloc[:, 2]
         else:
             logger.error(
                 f"Please put only one csv file with anchor samples to {paths.INPUT_ANCHOR} directory."
