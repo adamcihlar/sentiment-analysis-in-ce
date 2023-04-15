@@ -76,7 +76,7 @@ class AdaptationOptimizationParams:
     TEMPERATURE = 2
     LOSS_COMBINATION_PARAMS = (0.5, 0.5)
     SKIP_VALIDATION = False
-    N_EMAILS = 2923
+    N_EMAILS = 2500
 
 
 # INFERENCE parameters
