@@ -54,26 +54,35 @@ for i, model in enumerate(models):
         task_settings=model[3],
     )
 
-    target_df = datasets[i]().sample(parameters.AdaptationOptimizationParams.N_EMAILS)
+    target_df = datasets[i]().sample(
+        parameters.AdaptationOptimizationParams.N_EMAILS, random_state=42
+    )
     target_df.text.to_csv(os.path.join(paths.INPUT, "hello.csv"), index=False)
     y_true = target_df.label.copy().reset_index(drop=True)
-
-    target_ds = ClassificationDataset(None)
-    target_ds.read_user_input()
-
-    target_ds.preprocess(asc.preprocessor)
-    target_ds.tokenize(asc.tokenizer)
-    target_ds.create_dataset()
-    target_ds.create_dataloader(16, False)
 
     for layer in emb_layers:
         for nn in sim_dist_types:
             for dim_size in dim_sizes:
+                target_ds = ClassificationDataset(None)
+                target_ds.read_user_input()
+
+                target_ds.preprocess(asc.preprocessor)
+                target_ds.tokenize(asc.tokenizer)
+                target_ds.create_dataset()
+                target_ds.create_dataloader(16, False)
 
                 # output samples for labelling
                 asc.suggest_anchor_set(target_ds, layer=layer, dim_size=dim_size)
 
                 for samples_labelled in labelled_sizes:
+                    target_ds = ClassificationDataset(None)
+                    target_ds.read_user_input()
+
+                    target_ds.preprocess(asc.preprocessor)
+                    target_ds.tokenize(asc.tokenizer)
+                    target_ds.create_dataset()
+                    target_ds.create_dataloader(16, False)
+
                     ### THIS WILL BE DONE BY USER
                     anch = pd.read_csv(
                         os.path.join(paths.INPUT_ANCHOR, "anchor_set.csv"), index_col=0
@@ -94,9 +103,13 @@ for i, model in enumerate(models):
 
                     file_name = (
                         datasets_names[i]
+                        + "_"
                         + str(layer)
+                        + "_"
                         + str(nn)
+                        + "_"
                         + str(dim_size)
+                        + "_"
                         + str(samples_labelled)
                         + ".json"
                     )
@@ -135,7 +148,9 @@ asc = AdaptiveSentimentClassifier(
     task_settings=model[3],
 )
 
-target_df = dataset().sample(parameters.AdaptationOptimizationParams.N_EMAILS)
+target_df = dataset().sample(
+    parameters.AdaptationOptimizationParams.N_EMAILS, random_state=42
+)
 target_df.text.to_csv(os.path.join(paths.INPUT, "hello.csv"), index=False)
 y_true = target_df.label.copy().reset_index(drop=True)
 
