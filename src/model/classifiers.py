@@ -1234,6 +1234,8 @@ class AdaptiveSentimentClassifier:
                 ~target_ds.y.isna()
             ]
             target_ds.y_pred.loc[target_ds.y.isna()] = list(np.floor(y_pred * 3))
+            # fix the corner case
+            target_ds.y_pred.loc[target_ds.y_pred==3] = 2
 
         return target_ds.y_pred
 
