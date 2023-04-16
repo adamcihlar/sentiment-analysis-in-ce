@@ -1123,6 +1123,7 @@ class AdaptiveSentimentClassifier:
         if output_hidden:
             hiddens = torch.cat(hiddens, dim=0)
             self.hiddens_full = hiddens
+            self.layer = output_hidden
             return preds, hiddens.detach().numpy()
         return preds
 
@@ -1235,7 +1236,7 @@ class AdaptiveSentimentClassifier:
             ]
             target_ds.y_pred.loc[target_ds.y.isna()] = list(np.floor(y_pred * 3))
             # fix the corner case
-            target_ds.y_pred.loc[target_ds.y_pred==3] = 2
+            target_ds.y_pred.loc[target_ds.y_pred == 3] = 2
 
         return target_ds.y_pred
 
@@ -1364,9 +1365,11 @@ class AdaptiveSentimentClassifier:
 
         if len(samples_to_label) < 100:
             n_to_sample = 100 - len(samples_to_label)
-            random_samples = target_ds.X.loc[
-                ~pd.Series(target_ds.X.index).isin(samples_to_label)
-            ].sample(n_to_sample)
+            random_samples = (
+                target_ds.X.loc[~pd.Series(target_ds.X.index).isin(samples_to_label)]
+                .sample(n_to_sample)
+                .index
+            )
             samples_to_label = samples_to_label + list(random_samples)
             cls_sizes = cls_sizes + [0 for _ in range(n_to_sample)]
             cls_sil_scores = cls_sil_scores + [-1 for _ in range(n_to_sample)]
