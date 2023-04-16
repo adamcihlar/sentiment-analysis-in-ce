@@ -1127,7 +1127,7 @@ class AdaptiveSentimentClassifier:
             return preds, hiddens.detach().numpy()
         return preds
 
-    def get_nn_dist_distribution(self, target_ds, nn=True, layer=-1, dim_size=None):
+    def get_knn_dist_distribution(self, target_ds, knn=1, layer=-1, dim_size=None):
         """
         Get distribution of nearest neighbors similarities of the target
         dataset.
@@ -1155,18 +1155,16 @@ class AdaptiveSentimentClassifier:
         euc_dist_mat = distance_matrix(hiddens, hiddens)
         np.fill_diagonal(euc_dist_mat, np.inf)
 
-        # nearest neighbor
-        if nn:
-            dist_dist = euc_dist_mat.min(axis=0)
-        else:
-            dist_dist = euc_dist_mat[euc_dist_mat != np.inf]
+        # k nearest neighbor
+        dist_dist = np.sort(euc_dist_mat, axis=1)[:, knn - 1]
+
         self.dist_dist = dist_dist
         # TODO labels divided by 2 to get [0,1] scale
         self.y_anchor = target_ds.y.loc[~target_ds.y.isna()] / 2
         self.anchor_hidden = self.hiddens[~target_ds.y.isna()]
         return dist_dist, hiddens
 
-    def nn_bulk_predict(self, target_ds, nn=True, layer=-1, dim_size=None):
+    def knn_bulk_predict(self, target_ds, knn=1, layer=-1, dim_size=None):
         """
         Predict label based on the nearest neighbor.
         Returns label and confidence that is based on the empirical p-value of
@@ -1174,25 +1172,27 @@ class AdaptiveSentimentClassifier:
         the similarity and similarities distribution.
         """
 
-        self.get_nn_dist_distribution(target_ds, nn=nn, layer=layer, dim_size=dim_size)
+        self.get_knn_dist_distribution(
+            target_ds, knn=knn, layer=layer, dim_size=dim_size
+        )
         test_hidden = self.hiddens[target_ds.y.isna()]
         anchor_hidden = self.anchor_hidden
 
         euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
-        nn_ind = euc_dist_anch_mat.argmin(axis=1)
-        y_pred_nn = self.y_anchor.iloc[nn_ind]
+        knn_ind = euc_dist_anch_mat.argmin(axis=1)
+        y_pred_knn = self.y_anchor.iloc[knn_ind]
 
         dist_dist_anch = euc_dist_anch_mat.min(axis=1)
-        y_conf_nn = np.array(
+        y_conf_knn = np.array(
             [
                 (sum(val <= self.dist_dist) / len(self.dist_dist))
                 for val in dist_dist_anch
             ]
         )
 
-        return y_pred_nn, y_conf_nn
+        return y_pred_knn, y_conf_knn
 
-    def mix_bulk_predict(self, target_ds, nn=True, layer=None, dim_size=-1, scale=True):
+    def mix_bulk_predict(self, target_ds, knn=1, layer=None, dim_size=-1, scale=True):
         """
         Ensemble of nearest neighbor and classifier prediction.
 
@@ -1202,7 +1202,7 @@ class AdaptiveSentimentClassifier:
 
         Returns series of predictions, they are also saved to the target_ds.
         """
-        # nn prediction
+        # knn prediction
         # use the values obtained during anchor set definition if available
         if layer is None:
             if self.layer is not None:
@@ -1210,18 +1210,18 @@ class AdaptiveSentimentClassifier:
             else:
                 logger.error("Provide index of layer to get the embeddings from.")
 
-        y_pred_nn, y_conf_nn = self.nn_bulk_predict(
-            target_ds, nn=nn, layer=layer, dim_size=dim_size
+        y_pred_knn, y_conf_knn = self.knn_bulk_predict(
+            target_ds, knn=knn, layer=layer, dim_size=dim_size
         )
-        y_pred_nn_w = y_pred_nn * y_conf_nn
+        y_pred_knn_w = y_pred_knn * y_conf_knn
 
         # cls prediction
-        cls_conf = 1 - y_conf_nn
+        cls_conf = 1 - y_conf_knn
         y_pred_cls = np.array(target_ds.y_pred)[list(target_ds.y.isna())]
         y_pred_cls_w = y_pred_cls * cls_conf
 
         # combined prediction
-        y_pred = y_pred_nn_w + y_pred_cls_w
+        y_pred = y_pred_knn_w + y_pred_cls_w
 
         # save to target_ds
         target_ds.y_pred = pd.Series(target_ds.y_pred, index=target_ds.y.index)
@@ -1240,13 +1240,13 @@ class AdaptiveSentimentClassifier:
 
         return target_ds.y_pred
 
-    def nn_predict(
+    def knn_predict(
         self,
         texts: List[str],
     ):
         assert (
             self.dist_dist is not None
-        ), "Distribution of the nearest neighbors similarities not available. Call self.get_nn_dist_distribution(target_ds) first."
+        ), "Distribution of the nearest neighbors similarities not available. Call self.get_knn_dist_distribution(target_ds) first."
         preds, hiddens = self.predict(
             texts, predict_scale=True, output_hidden=self.layer
         )
@@ -1256,31 +1256,31 @@ class AdaptiveSentimentClassifier:
 
         # euclidian distance
         euc_dist_anch_mat = distance_matrix(hiddens, self.anchor_hidden)
-        nn_ind = euc_dist_anch_mat.argmin(dim=1)
-        y_pred_nn = self.y_anchor.iloc[nn_ind]
+        knn_ind = euc_dist_anch_mat.argmin(dim=1)
+        y_pred_knn = self.y_anchor.iloc[knn_ind]
 
         euc_dist_anch = euc_dist_anch_mat.min(dim=1).values
-        y_conf_nn = np.array(
+        y_conf_knn = np.array(
             [
                 (sum(val <= self.dist_dist) / len(self.dist_dist)).detach()
                 for val in dist_dist_anch
             ]
         )
 
-        return y_pred_nn, y_conf_nn, preds
+        return y_pred_knn, y_conf_knn, preds
 
     def mix_predict(
         self,
         texts: List[str],
         scale=True,
     ):
-        y_pred_nn, y_conf_nn, y_pred_cls = self.nn_predict(texts)
-        cls_conf = 1 - y_conf_nn
-        y_pred_nn_w = y_pred_nn * y_conf_nn
+        y_pred_knn, y_conf_knn, y_pred_cls = self.knn_predict(texts)
+        cls_conf = 1 - y_conf_knn
+        y_pred_knn_w = y_pred_knn * y_conf_knn
         y_pred_cls_w = y_pred_cls * cls_conf
 
         # combined prediction
-        y_pred = y_pred_nn_w + y_pred_cls_w
+        y_pred = y_pred_knn_w + y_pred_cls_w
 
         if not scale:
             y_pred = np.floor(y_pred * 3)
@@ -1291,11 +1291,11 @@ class AdaptiveSentimentClassifier:
         Cluster the embeddings to suggest the most useful samples to label.
 
         Forward pass of the target_ds - I should save the normalized hidden state,
-        to avoid computing is again in get_nn_dist_distribution. Save also the
+        to avoid computing is again in get_knn_dist_distribution. Save also the
         layer and dim_size, it seems reasonable to use the same one.
 
         Cluster - what algo? Set clusters count? The goal is to find very dense
-        clusters that I want to influence with the nn prediction, I do not want
+        clusters that I want to influence with the knn prediction, I do not want
         to change max number of predictions but max number with high
         confidence - HDBSCAN. What hyperparameters
         Then centroids of the clusters.
