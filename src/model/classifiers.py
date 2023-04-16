@@ -1122,6 +1122,7 @@ class AdaptiveSentimentClassifier:
 
         if output_hidden:
             hiddens = torch.cat(hiddens, dim=0)
+            self.hiddens_full = hiddens
             return preds, hiddens.detach().numpy()
         return preds
 
