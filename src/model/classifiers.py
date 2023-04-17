@@ -1382,7 +1382,7 @@ class AdaptiveSentimentClassifier:
         else:
             # kmeans clustering
             kmeans = KMeans(anchor_set_size)
-            labs = kmeans.fit_predict()
+            labs = kmeans.fit_predict(hiddens)
             labs_list = pd.Series(labs).unique()
             sil_samples = silhouette_samples(hiddens, labs)
 
