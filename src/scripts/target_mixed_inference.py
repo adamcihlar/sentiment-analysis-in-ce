@@ -2,7 +2,7 @@ from src.reading.readers import read_csfd
 import os
 import pandas as pd
 from src.config import paths, parameters
-from src.utils.datasets import ClassificationDataset
+from src.utils.datasets import ClassificationDataset, drop_undefined_classes
 from src.model.classifiers import (
     AdaptiveSentimentClassifier,
     ClassificationHead,
@@ -29,7 +29,7 @@ datasets_names = ["csfd", "mall", "facebook"]
 
 emb_layers = [-1, -2]
 
-sim_dist_types = [True, False]
+sim_dist_types = [1, 5]
 
 dim_sizes = [None, 0.999, 0.99, 0.98, 0.95, 0.9, 0.8]
 
@@ -54,14 +54,29 @@ for i, model in enumerate(models):
         task_settings=model[3],
     )
 
-    target_df = datasets[i]().sample(
-        parameters.AdaptationOptimizationParams.N_EMAILS, random_state=42
+    target_df = datasets[i]()
+    target_df = drop_undefined_classes(target_df)
+    target_df = target_df.sample(
+        parameters.AdaptationOptimizationParams.N_EMAILS,
+        random_state=parameters.RANDOM_STATE,
     )
+
     target_df.text.to_csv(os.path.join(paths.INPUT, "hello.csv"), index=False)
     y_true = target_df.label.copy().reset_index(drop=True)
 
     for layer in emb_layers:
-        for nn in sim_dist_types:
+        target_ds = ClassificationDataset(None)
+        target_ds.read_user_input()
+
+        target_ds.preprocess(asc.preprocessor)
+        target_ds.tokenize(asc.tokenizer)
+        target_ds.create_dataset()
+        target_ds.create_dataloader(16, False)
+        asc.bulk_predict(target_ds, predict_scale=False, output_hidden=layer)
+        # asc.bulk_predict(target_ds, predict_scale=True, output_hidden=layer)
+        y_pred_copy = pd.Series(target_ds.y_pred, index=target_ds.y.index).copy()
+
+        for knn in sim_dist_types:
             for dim_size in dim_sizes:
                 target_ds = ClassificationDataset(None)
                 target_ds.read_user_input()
@@ -73,6 +88,7 @@ for i, model in enumerate(models):
 
                 # output samples for labelling
                 asc.suggest_anchor_set(target_ds, layer=layer, dim_size=dim_size)
+                # creates target_ds.y_pred
 
                 for samples_labelled in labelled_sizes:
                     target_ds = ClassificationDataset(None)
@@ -82,6 +98,8 @@ for i, model in enumerate(models):
                     target_ds.tokenize(asc.tokenizer)
                     target_ds.create_dataset()
                     target_ds.create_dataloader(16, False)
+
+                    target_ds.y_pred = y_pred_copy.copy()
 
                     ### THIS WILL BE DONE BY USER
                     anch = pd.read_csv(
@@ -96,17 +114,24 @@ for i, model in enumerate(models):
                     # read labelled subset
                     target_ds.read_anchor_set()
 
+                    # evaluate without the knn extension to have comparable
+                    # results
+                    anchor = target_ds.y.loc[~target_ds.y.isna()].copy()
+                    target_ds.y_pred.loc[anchor.index] = anchor
+
                     # bulk inference
-                    y_pred = asc.mix_bulk_predict(target_ds, nn=nn, scale=False)
+                    # y_pred = asc.mix_bulk_predict(target_ds, knn=knn, scale=False)
 
                     target_ds.y = y_true
 
                     file_name = (
-                        datasets_names[i]
+                        "base"
+                        + "_"
+                        + datasets_names[i]
                         + "_"
                         + str(layer)
                         + "_"
-                        + str(nn)
+                        + str(knn)
                         + "_"
                         + str(dim_size)
                         + "_"

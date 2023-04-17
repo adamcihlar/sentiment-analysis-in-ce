@@ -187,11 +187,11 @@ def plot_results(df, target):
 
 
 if __name__ == "__main__":
+
     # mall
     target = "mall"
     target_schedule = Mall
     path_to_results = paths.OUTPUT_INFO_ADAPTATION_MALL
-
     df = get_df_for_plot(target_schedule, path_to_results)
     plot_results(df, target)
 
@@ -199,7 +199,6 @@ if __name__ == "__main__":
     target = "csfd"
     target_schedule = CSFD
     path_to_results = paths.OUTPUT_INFO_ADAPTATION_CSFD
-
     df = get_df_for_plot(target_schedule, path_to_results)
     plot_results(df, target)
 
@@ -207,10 +206,23 @@ if __name__ == "__main__":
     target = "facebook"
     target_schedule = Facebook
     path_to_results = paths.OUTPUT_INFO_ADAPTATION_FACEBOOK
-
     df = get_df_for_plot(target_schedule, path_to_results)
     plot_results(df, target)
 
+    # main result
+    df.loc[
+        (df.epoch == 2)
+        & (df.classifiers == "shared")
+        & (df.loss_comb == (0.5, 0.5))
+        & (df.temp == 20)
+    ].iloc[0]
+
+    df.loss_comb.unique()
+
+    # main result
+    df.loc[(df.classifiers == "shared")][["macro", "epoch", "temp", "loss_comb"]].pivot(
+        columns="epoch", values="macro", index=["temp", "loss_comb"]
+    ).to_latex()
 
 # validation sets - do I care?
 files_mask = np.array([bool(re.search("val", file)) for file in files])
