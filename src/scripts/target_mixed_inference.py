@@ -78,16 +78,16 @@ for i, model in enumerate(models):
 
         for knn in sim_dist_types:
             for dim_size in dim_sizes:
-                target_ds = ClassificationDataset(None)
-                target_ds.read_user_input()
+                #                 target_ds = ClassificationDataset(None)
+                #                 target_ds.read_user_input()
 
-                target_ds.preprocess(asc.preprocessor)
-                target_ds.tokenize(asc.tokenizer)
-                target_ds.create_dataset()
-                target_ds.create_dataloader(16, False)
+                #                 target_ds.preprocess(asc.preprocessor)
+                #                 target_ds.tokenize(asc.tokenizer)
+                #                 target_ds.create_dataset()
+                #                 target_ds.create_dataloader(16, False)
 
                 # output samples for labelling
-                asc.suggest_anchor_set(target_ds, layer=layer, dim_size=dim_size)
+                #                 asc.suggest_anchor_set(target_ds, layer=layer, dim_size=dim_size)
                 # creates target_ds.y_pred
 
                 for samples_labelled in labelled_sizes:
@@ -98,6 +98,13 @@ for i, model in enumerate(models):
                     target_ds.tokenize(asc.tokenizer)
                     target_ds.create_dataset()
                     target_ds.create_dataloader(16, False)
+
+                    asc.suggest_anchor_set(
+                        target_ds,
+                        layer=layer,
+                        dim_size=dim_size,
+                        anchor_set_size=samples_labelled,
+                    )
 
                     target_ds.y_pred = y_pred_copy.copy()
 
@@ -125,7 +132,7 @@ for i, model in enumerate(models):
                     target_ds.y = y_true
 
                     file_name = (
-                        "base"
+                        "kmeans"
                         + "_"
                         + datasets_names[i]
                         + "_"
