@@ -233,12 +233,19 @@ class AdaptiveSentimentClassifier:
         start_time = time.strftime("%Y%m%d-%H%M%S")
 
         # get one classfication head per dataset and shared encoder for all datasets
-        classifiers = {
-            ds_name: self.classifier(task_settings=task) for ds_name in train_datasets
-        }
+        try:
+            classifiers = {
+                ds_name: self.classifier(task_settings=task)
+                for ds_name in train_datasets
+            }
+            num_classes = self.classifier(task_settings=task).num_classes
+            task = self.classifier(task_settings=task).task_settings
+        except:
+            classifiers = {ds_name: self.classifier for ds_name in train_datasets}
+            num_classes = self.classifier.num_classes
+            task = self.classifier.task_settings
+
         encoder = self.source_encoder
-        num_classes = self.classifier(task_settings=task).num_classes
-        task = self.classifier(task_settings=task).task_settings
 
         # get optimizer for each classfication head and the shared encoder
         if lr_decay is None or lr_decay == 1:
