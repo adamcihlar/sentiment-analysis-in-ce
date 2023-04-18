@@ -420,16 +420,10 @@ def get_target_datasets_ready_for_finetuning(
     datasets = [transform_labels(ds, transformation=transformation) for ds in datasets]
 
     train_datasets = datasets[0]
-    val_datasets = datasets[1]
 
     train_datasets = {
         ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
         for ds in train_datasets
-    }
-
-    val_datasets = {
-        ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
-        for ds in val_datasets
     }
 
     [ds.preprocess(preprocessor) for ds in train_datasets.values()]
@@ -442,15 +436,24 @@ def get_target_datasets_ready_for_finetuning(
         for ds in train_datasets.values()
     ]
 
-    [ds.preprocess(preprocessor) for ds in val_datasets.values()]
-    [ds.tokenize(tokenizer) for ds in val_datasets.values()]
-    [ds.create_dataset() for ds in val_datasets.values()]
-    [
-        ds.create_dataloader(
-            batch_size=batch_size, shuffle=False, num_workers=num_workers
-        )
-        for ds in val_datasets.values()
-    ]
+    if len(datasets) > 1:
+        val_datasets = datasets[1]
+        val_datasets = {
+            ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
+            for ds in val_datasets
+        }
+        [ds.preprocess(preprocessor) for ds in val_datasets.values()]
+        [ds.tokenize(tokenizer) for ds in val_datasets.values()]
+        [ds.create_dataset() for ds in val_datasets.values()]
+        [
+            ds.create_dataloader(
+                batch_size=batch_size, shuffle=False, num_workers=num_workers
+            )
+            for ds in val_datasets.values()
+        ]
+    else:
+        val_datasets = []
+
     return train_datasets, val_datasets
 
 
