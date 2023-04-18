@@ -419,7 +419,7 @@ def get_target_datasets_ready_for_finetuning(
     # both
     datasets = [transform_labels(ds, transformation=transformation) for ds in datasets]
 
-    train_datasets = datasets[0]
+    train_datasets = list(datasets[0])
 
     train_datasets = {
         ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
@@ -437,7 +437,7 @@ def get_target_datasets_ready_for_finetuning(
     ]
 
     if len(datasets) > 1:
-        val_datasets = datasets[1]
+        val_datasets = list(datasets[1])
         val_datasets = {
             ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
             for ds in val_datasets
