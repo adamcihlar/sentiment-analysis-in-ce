@@ -276,12 +276,20 @@ class AdaptiveSentimentClassifier:
             }
 
             encoder_list_of_layers = encoder.encoder.encoder.layer
-            optimizer_params_list = layer_wise_learning_rate(
-                encoder_list_of_layers,
-                optimizer_params["lr"],
-                lr_decay,
-                len(self.classifier().model),
-            )
+            try:
+                optimizer_params_list = layer_wise_learning_rate(
+                    encoder_list_of_layers,
+                    optimizer_params["lr"],
+                    lr_decay,
+                    len(self.classifier().model),
+                )
+            except:
+                optimizer_params_list = layer_wise_learning_rate(
+                    encoder_list_of_layers,
+                    optimizer_params["lr"],
+                    lr_decay,
+                    len(self.classifier.model),
+                )
             encoder_optimizer = optimizer(optimizer_params_list, **optimizer_params)
 
         # compute the total num of training steps to init lr_scheduler
