@@ -385,8 +385,73 @@ class ClassificationDataset:
             logger.error(
                 f"Please put only one csv file with anchor samples to {paths.INPUT_ANCHOR} directory."
             )
-
         pass
+
+    def get_target_train_test_splits(self):
+        """
+        After reading the anchor set.
+        Returns two dataframes, one with labels, second without.
+        """
+        test_texts = self.X[self.y.isna()]
+        test_labels = self.y[self.y.isna()]
+        test_df = pd.DataFrame({"text": test_texts, "label": test_labels})
+
+        train_texts = self.X[~self.y.isna()]
+        train_labels = self.y[~self.y.isna()]
+        train_df = pd.DataFrame({"text": train_texts, "label": train_labels})
+
+        return train_df, test_df
+
+
+def get_target_datasets_ready_for_finetuning(
+    datasets: List[pd.DataFrame],
+    transformation,
+    preprocessor,
+    tokenizer,
+    batch_size,
+    shuffle,
+    num_workers,
+    share_classifier,
+):
+    # do this for both train and val
+    datasets = [drop_undefined_classes(ds) for ds in datasets]
+
+    # both
+    datasets = [transform_labels(ds, transformation=transformation) for ds in datasets]
+
+    train_datasets = datasets[0]
+    val_datasets = datasets[1]
+
+    train_datasets = {
+        ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
+        for ds in train_datasets
+    }
+
+    val_datasets = {
+        ds.source.iloc[0]: ClassificationDataset(ds.text, ds.label, ds.source)
+        for ds in val_datasets
+    }
+
+    [ds.preprocess(preprocessor) for ds in train_datasets.values()]
+    [ds.tokenize(tokenizer) for ds in train_datasets.values()]
+    [ds.create_dataset() for ds in train_datasets.values()]
+    [
+        ds.create_dataloader(
+            batch_size=batch_size, shuffle=shuffle, num_workers=num_workers
+        )
+        for ds in train_datasets.values()
+    ]
+
+    [ds.preprocess(preprocessor) for ds in val_datasets.values()]
+    [ds.tokenize(tokenizer) for ds in val_datasets.values()]
+    [ds.create_dataset() for ds in val_datasets.values()]
+    [
+        ds.create_dataloader(
+            batch_size=batch_size, shuffle=False, num_workers=num_workers
+        )
+        for ds in val_datasets.values()
+    ]
+    return train_datasets, val_datasets
 
 
 def get_datasets_ready_for_finetuning(
