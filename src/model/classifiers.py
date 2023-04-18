@@ -294,14 +294,22 @@ class AdaptiveSentimentClassifier:
 
         # get a lr_scheduler for every optimizer
         all_optimizers_list = list(cls_optimizers.values()) + [encoder_optimizer]
-        lr_schedulers = [
-            lr_scheduler_call(
-                optimizer=optim,
-                num_warmup_steps=num_training_steps * warmup_steps_proportion,
-                num_training_steps=num_training_steps,
-            )
-            for optim in all_optimizers_list
-        ]
+        if lr_scheduler_call == get_constant_schedule:
+            lr_schedulers = [
+                lr_scheduler_call(
+                    optimizer=optim,
+                )
+                for optim in all_optimizers_list
+            ]
+        else:
+            lr_schedulers = [
+                lr_scheduler_call(
+                    optimizer=optim,
+                    num_warmup_steps=num_training_steps * warmup_steps_proportion,
+                    num_training_steps=num_training_steps,
+                )
+                for optim in all_optimizers_list
+            ]
 
         # put all models to device, gpu if available, else cpu
         device = (
