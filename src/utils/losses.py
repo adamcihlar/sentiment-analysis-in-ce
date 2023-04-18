@@ -67,13 +67,10 @@ def corn_loss_weighted(logits, y_train, num_classes, weights):
         pred = logits[train_examples, task_index]
 
         loss = -torch.sum(
-            ((F.logsigmoid(pred) * train_labels) * weights[task_index])
-            + (
-                (F.logsigmoid(pred) - pred)
-                * (1 - train_labels)
-                * weights[task_index + 1]
-            )
+            ((F.logsigmoid(pred) * train_labels) * weights[task_index + 1])
+            + ((F.logsigmoid(pred) - pred) * (1 - train_labels) * weights[task_index])
         )
         losses += loss
+    print("prd")
 
     return losses / num_examples
