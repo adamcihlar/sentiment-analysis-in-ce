@@ -55,7 +55,8 @@ if __name__ == "__main__":
         test_df = datasets[i]()
         test_df = drop_undefined_classes(test_df)
         test_df = test_df.sample(
-            parameters.AdaptationOptimizationParams.N_EMAILS, parameters.RANDOM_STATE
+            parameters.AdaptationOptimizationParams.N_EMAILS,
+            random_state=parameters.RANDOM_STATE,
         )
 
         for model in models[i]:
