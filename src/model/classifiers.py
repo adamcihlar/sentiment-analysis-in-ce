@@ -211,6 +211,7 @@ class AdaptiveSentimentClassifier:
         metrics: List,
         task: str,
         share_classifier: bool = False,
+        save_models: bool = True,
     ):
         """
         Implements multitask finetuning on provided train_datasets.
@@ -482,25 +483,26 @@ class AdaptiveSentimentClassifier:
             val_epoch_loss_progress = {ds_name: [] for ds_name in val_datasets}
 
             # save all models from the epoch
-            # encoder
-            save_path = os.path.join(
-                paths.OUTPUT_MODELS_FINETUNED_ENCODER,
-                "_".join([self.name, start_time, str(epoch)]),
-            )
-            self.save_model(encoder, save_path)
-
-            # classifiers
-            cls_save_paths = [
-                os.path.join(
-                    paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER,
-                    "_".join([self.name, start_time, cls, str(epoch)]),
+            if save_models:
+                # encoder
+                save_path = os.path.join(
+                    paths.OUTPUT_MODELS_FINETUNED_ENCODER,
+                    "_".join([self.name, start_time, str(epoch)]),
                 )
-                for cls in classifiers
-            ]
-            [
-                self.save_model(classifiers[cls_name], path)
-                for cls_name, path in zip(classifiers, cls_save_paths)
-            ]
+                self.save_model(encoder, save_path)
+
+                # classifiers
+                cls_save_paths = [
+                    os.path.join(
+                        paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER,
+                        "_".join([self.name, start_time, cls, str(epoch)]),
+                    )
+                    for cls in classifiers
+                ]
+                [
+                    self.save_model(classifiers[cls_name], path)
+                    for cls_name, path in zip(classifiers, cls_save_paths)
+                ]
 
         # save the training info
         for ds_name in val_datasets:
