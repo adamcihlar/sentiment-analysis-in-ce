@@ -11,7 +11,9 @@ import pandas as pd
 import torch
 from coral_pytorch.dataset import corn_label_from_logits, levels_from_labelbatch
 from coral_pytorch.layers import CoralLayer
+
 from coral_pytorch.losses import coral_loss, corn_loss
+from src.utils.losses import corn_loss_weighted
 from evaluate import load
 from loguru import logger
 from sklearn.metrics import confusion_matrix
@@ -212,6 +214,7 @@ class AdaptiveSentimentClassifier:
         task: str,
         share_classifier: bool = False,
         save_models: bool = True,
+        weights: torch.Tensor = None,
     ):
         """
         Implements multitask finetuning on provided train_datasets.
@@ -394,7 +397,11 @@ class AdaptiveSentimentClassifier:
                 features = encoder(**batch)
                 logits, probs = classifiers[source_ds].forward(features)
                 # backward pass
-                if task == "ordinal":
+                if task == "ordinal" and weights is not None:
+                    cls_loss = corn_loss_weighted(
+                        logits, batch["labels"], num_classes, weights
+                    )
+                elif task == "ordinal":
                     cls_loss = corn_loss(logits, batch["labels"], num_classes)
                 elif task == "multiclass":
                     cls_loss = ce_loss(logits, batch["labels"])
@@ -436,7 +443,12 @@ class AdaptiveSentimentClassifier:
                             logits, probs = classifiers[val_ds_name].forward(features)
 
                     if task == "ordinal":
-                        cls_loss = corn_loss(logits, batch["labels"], num_classes)
+                        if weights is not None:
+                            cls_loss = corn_loss_weighted(
+                                logits, batch["labels"], num_classes, weights
+                            )
+                        else:
+                            cls_loss = corn_loss(logits, batch["labels"], num_classes)
                         predictions = corn_label_from_logits(logits).float()
                     elif task == "multiclass":
                         cls_loss = ce_loss(logits, batch["labels"])
