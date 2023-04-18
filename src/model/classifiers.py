@@ -245,6 +245,8 @@ class AdaptiveSentimentClassifier:
             num_classes = self.classifier.num_classes
             task = self.classifier.task_settings
 
+        if self.source_encoder is None:
+            self.source_encoder = self.target_encoder
         encoder = self.source_encoder
 
         # get optimizer for each classfication head and the shared encoder
