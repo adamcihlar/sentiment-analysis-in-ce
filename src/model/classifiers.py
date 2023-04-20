@@ -1207,7 +1207,14 @@ class AdaptiveSentimentClassifier:
         return dist_dist, hiddens
 
     def knn_bulk_predict(
-        self, target_ds, knn=1, layer=-1, dim_size=None, k=1, scale=True
+        self,
+        target_ds,
+        knn=1,
+        layer=-1,
+        dim_size=None,
+        k=1,
+        scale=True,
+        emp_prob=False,
     ):
         """
         Predict label based on the nearest neighbor.
@@ -1239,6 +1246,10 @@ class AdaptiveSentimentClassifier:
             knn.fit(self.anchor_hidden, self.y_anchor * 2)
             y_pred_probs = knn.predict_proba(test_hidden)
             y_conf_knn = y_pred_probs.max(axis=1)
+            if emp_prob:
+                y_conf_knn = [
+                    sum(conf >= y_conf_knn) / len(y_conf_knn) for conf in y_conf_knn
+                ]
             if scale:
                 y_pred_knn = np.sum(y_pred_probs * np.array([0, 0.5, 1]), axis=1)
             else:
@@ -1259,7 +1270,7 @@ class AdaptiveSentimentClassifier:
         return y_pred_knn, y_conf_knn
 
     def mix_bulk_predict(
-        self, target_ds, knn=1, layer=None, dim_size=-1, scale=True, k=1
+        self, target_ds, knn=1, layer=None, dim_size=-1, scale=True, k=1, emp_prob=False
     ):
         """
         Ensemble of nearest neighbor and classifier prediction.
@@ -1284,6 +1295,7 @@ class AdaptiveSentimentClassifier:
             layer=layer,
             dim_size=dim_size,  # scale=scale,
             k=k,
+            emp_prob=emp_prob,
         )
         y_pred_knn_w = y_pred_knn * y_conf_knn
 
