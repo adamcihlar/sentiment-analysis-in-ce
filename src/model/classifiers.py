@@ -11,6 +11,7 @@ import pandas as pd
 import torch
 from coral_pytorch.dataset import corn_label_from_logits, levels_from_labelbatch
 from coral_pytorch.layers import CoralLayer
+from sklearn.neighbors import KNeighborsClassifier
 
 from coral_pytorch.losses import coral_loss, corn_loss
 from src.utils.losses import corn_loss_weighted
@@ -1205,7 +1206,9 @@ class AdaptiveSentimentClassifier:
         self.anchor_hidden = self.hiddens[~target_ds.y.isna()]
         return dist_dist, hiddens
 
-    def knn_bulk_predict(self, target_ds, knn=1, layer=-1, dim_size=None):
+    def knn_bulk_predict(
+        self, target_ds, knn=1, layer=-1, dim_size=None, k=1, predict_scale=True
+    ):
         """
         Predict label based on the nearest neighbor.
         Returns label and confidence that is based on the empirical p-value of
@@ -1219,17 +1222,29 @@ class AdaptiveSentimentClassifier:
         test_hidden = self.hiddens[target_ds.y.isna()]
         anchor_hidden = self.anchor_hidden
 
-        euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
-        knn_ind = euc_dist_anch_mat.argmin(axis=1)
-        y_pred_knn = self.y_anchor.iloc[knn_ind]
+        if k == 1:
+            euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
+            knn_ind = euc_dist_anch_mat.argmin(axis=1)
+            y_pred_knn = self.y_anchor.iloc[knn_ind]
 
-        dist_dist_anch = euc_dist_anch_mat.min(axis=1)
-        y_conf_knn = np.array(
-            [
-                (sum(val <= self.dist_dist) / len(self.dist_dist))
-                for val in dist_dist_anch
-            ]
-        )
+            dist_dist_anch = euc_dist_anch_mat.min(axis=1)
+            y_conf_knn = np.array(
+                [
+                    (sum(val <= self.dist_dist) / len(self.dist_dist))
+                    for val in dist_dist_anch
+                ]
+            )
+        else:
+            knn = KNeighborsClassifier(n_neighbors=knn, weights="distance")
+            knn.fit(self.anchor_hidden, self.y_anchor)
+            if predict_scale:
+                y_pred_probs = knn.predict_proba(test_hidden)
+                y_pred_knn = y_pred_probs.max(axis=1)
+            else:
+                y_pred_knn = knn.predict(test_hidden)
+            # if I wanted the confidence somehow?
+            # knn.kneighbors(hiddes, return_distance=True)
+            y_conf_knn = None
 
         return y_pred_knn, y_conf_knn
 
@@ -1284,6 +1299,7 @@ class AdaptiveSentimentClassifier:
     def knn_predict(
         self,
         texts: List[str],
+        k=1,
     ):
         assert (
             self.dist_dist is not None
@@ -1295,18 +1311,26 @@ class AdaptiveSentimentClassifier:
         if self.pca is not None:
             hiddens = self.pca.transform(hiddens)
 
-        # euclidian distance
-        euc_dist_anch_mat = distance_matrix(hiddens, self.anchor_hidden)
-        knn_ind = euc_dist_anch_mat.argmin(dim=1)
-        y_pred_knn = self.y_anchor.iloc[knn_ind]
+        if k == 1:
+            # euclidian distance
+            euc_dist_anch_mat = distance_matrix(hiddens, self.anchor_hidden)
+            knn_ind = euc_dist_anch_mat.argmin(dim=1)
+            y_pred_knn = self.y_anchor.iloc[knn_ind]
 
-        euc_dist_anch = euc_dist_anch_mat.min(dim=1).values
-        y_conf_knn = np.array(
-            [
-                (sum(val <= self.dist_dist) / len(self.dist_dist)).detach()
-                for val in dist_dist_anch
-            ]
-        )
+            euc_dist_anch = euc_dist_anch_mat.min(dim=1).values
+            y_conf_knn = np.array(
+                [
+                    (sum(val <= self.dist_dist) / len(self.dist_dist)).detach()
+                    for val in dist_dist_anch
+                ]
+            )
+        else:
+            knn = KNeighborsClassifier(n_neighbors=knn, weights="distance")
+            knn.fit(self.anchor_hidden, self.y_anchor)
+            y_pred_knn = knn.predict(hiddens)
+            # if I wanted the confidence somehow?
+            # knn.kneighbors(hiddes, return_distance=True)
+            y_conf_knn = None
 
         return y_pred_knn, y_conf_knn, preds
 
