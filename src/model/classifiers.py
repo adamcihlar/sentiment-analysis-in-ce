@@ -1207,7 +1207,7 @@ class AdaptiveSentimentClassifier:
         return dist_dist, hiddens
 
     def knn_bulk_predict(
-        self, target_ds, knn=1, layer=-1, dim_size=None, k=1, predict_scale=True
+        self, target_ds, knn=1, layer=-1, dim_size=None, k=1, scale=True
     ):
         """
         Predict label based on the nearest neighbor.
@@ -1239,14 +1239,14 @@ class AdaptiveSentimentClassifier:
             knn.fit(self.anchor_hidden, self.y_anchor * 2)
             y_pred_probs = knn.predict_proba(test_hidden)
             y_conf_knn = y_pred_probs.max(axis=1)
-            if predict_scale:
+            if scale:
                 y_pred_knn = y_pred_probs.max(axis=1)
             else:
                 y_pred_knn = y_pred_probs.argmax(axis=1)
 
             # save to target_ds
             target_ds.y_pred = pd.Series(target_ds.y_pred, index=target_ds.y.index)
-            if predict_scale:
+            if scale:
                 target_ds.y_pred.loc[~target_ds.y.isna()] = (
                     target_ds.y.loc[~target_ds.y.isna()] / 2
                 )
@@ -1277,7 +1277,10 @@ class AdaptiveSentimentClassifier:
                 logger.error("Provide index of layer to get the embeddings from.")
 
         y_pred_knn, y_conf_knn = self.knn_bulk_predict(
-            target_ds, knn=knn, layer=layer, dim_size=dim_size
+            target_ds,
+            knn=knn,
+            layer=layer,
+            dim_size=dim_size,  # scale=scale,
         )
         y_pred_knn_w = y_pred_knn * y_conf_knn
 
