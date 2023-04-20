@@ -1236,16 +1236,13 @@ class AdaptiveSentimentClassifier:
             )
         else:
             knn = KNeighborsClassifier(n_neighbors=knn, weights="distance")
-            knn.fit(self.anchor_hidden, self.y_anchor)
+            knn.fit(self.anchor_hidden, self.y_anchor * 2)
+            y_pred_probs = knn.predict_proba(test_hidden)
+            y_conf_knn = y_pred_probs.max(axis=1)
             if predict_scale:
-                y_pred_probs = knn.predict_proba(test_hidden)
                 y_pred_knn = y_pred_probs.max(axis=1)
             else:
-                y_pred_knn = knn.predict(test_hidden)
-            # if I wanted the confidence somehow?
-            # knn.kneighbors(hiddes, return_distance=True)
-            y_conf_knn = None
-
+                y_pred_knn = y_pred_probs.argmax(axis=1)
         return y_pred_knn, y_conf_knn
 
     def mix_bulk_predict(self, target_ds, knn=1, layer=None, dim_size=-1, scale=True):
@@ -1327,10 +1324,12 @@ class AdaptiveSentimentClassifier:
         else:
             knn = KNeighborsClassifier(n_neighbors=knn, weights="distance")
             knn.fit(self.anchor_hidden, self.y_anchor)
-            y_pred_knn = knn.predict(hiddens)
-            # if I wanted the confidence somehow?
-            # knn.kneighbors(hiddes, return_distance=True)
-            y_conf_knn = None
+            y_pred_probs = knn.predict_proba(test_hidden)
+            y_conf_knn = y_pred_probs.max(axis=1)
+            if predict_scale:
+                y_pred_knn = y_pred_probs.max(axis=1)
+            else:
+                y_pred_knn = y_pred_probs.argmax(axis=1)
 
         return y_pred_knn, y_conf_knn, preds
 
