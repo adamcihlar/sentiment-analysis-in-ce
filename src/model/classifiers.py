@@ -1258,7 +1258,9 @@ class AdaptiveSentimentClassifier:
                 target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred_knn)
         return y_pred_knn, y_conf_knn
 
-    def mix_bulk_predict(self, target_ds, knn=1, layer=None, dim_size=-1, scale=True):
+    def mix_bulk_predict(
+        self, target_ds, knn=1, layer=None, dim_size=-1, scale=True, k=1
+    ):
         """
         Ensemble of nearest neighbor and classifier prediction.
 
@@ -1281,6 +1283,7 @@ class AdaptiveSentimentClassifier:
             knn=knn,
             layer=layer,
             dim_size=dim_size,  # scale=scale,
+            k=k,
         )
         y_pred_knn_w = y_pred_knn * y_conf_knn
 
