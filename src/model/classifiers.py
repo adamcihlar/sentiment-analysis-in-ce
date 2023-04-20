@@ -1243,6 +1243,19 @@ class AdaptiveSentimentClassifier:
                 y_pred_knn = y_pred_probs.max(axis=1)
             else:
                 y_pred_knn = y_pred_probs.argmax(axis=1)
+
+            # save to target_ds
+            target_ds.y_pred = pd.Series(target_ds.y_pred, index=target_ds.y.index)
+            if predict_scale:
+                target_ds.y_pred.loc[~target_ds.y.isna()] = (
+                    target_ds.y.loc[~target_ds.y.isna()] / 2
+                )
+                target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred_knn)
+            else:
+                target_ds.y_pred.loc[~target_ds.y.isna()] = target_ds.y.loc[
+                    ~target_ds.y.isna()
+                ]
+                target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred_knn)
         return y_pred_knn, y_conf_knn
 
     def mix_bulk_predict(self, target_ds, knn=1, layer=None, dim_size=-1, scale=True):
