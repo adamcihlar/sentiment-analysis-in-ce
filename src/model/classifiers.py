@@ -1252,10 +1252,13 @@ class AdaptiveSentimentClassifier:
                 )
                 target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred_knn)
             else:
+                import ipdb
+
+                ipdb.set_trace()
                 target_ds.y_pred.loc[~target_ds.y.isna()] = target_ds.y.loc[
                     ~target_ds.y.isna()
                 ]
-                target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred_knn)
+                target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred_knn / 2)
         return y_pred_knn, y_conf_knn
 
     def mix_bulk_predict(
