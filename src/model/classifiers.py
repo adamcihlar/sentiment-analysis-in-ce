@@ -1235,6 +1235,9 @@ class AdaptiveSentimentClassifier:
                 ]
             )
         else:
+            import ipdb
+
+            ipdb.set_trace()
             knn = KNeighborsClassifier(n_neighbors=knn, weights="distance")
             knn.fit(self.anchor_hidden, self.y_anchor * 2)
             y_pred_probs = knn.predict_proba(test_hidden)
@@ -1252,9 +1255,6 @@ class AdaptiveSentimentClassifier:
                 )
                 target_ds.y_pred.loc[target_ds.y.isna()] = list(y_pred_knn)
             else:
-                import ipdb
-
-                ipdb.set_trace()
                 target_ds.y_pred.loc[~target_ds.y.isna()] = target_ds.y.loc[
                     ~target_ds.y.isna()
                 ]
