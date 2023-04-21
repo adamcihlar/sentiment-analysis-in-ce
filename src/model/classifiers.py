@@ -1247,7 +1247,7 @@ class AdaptiveSentimentClassifier:
                 euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
                 k_dist = np.sort(euc_dist_anch_mat, axis=1)[:, k - 1]
                 rad = np.mean(k_dist)
-
+                print("k: ", k, "\nradius: ", rad)
                 knn = RadiusNeighborsClassifier(radius=rad, weights="distance")
             else:
                 knn = KNeighborsClassifier(n_neighbors=k, weights="distance")
