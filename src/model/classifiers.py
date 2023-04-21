@@ -1247,9 +1247,9 @@ class AdaptiveSentimentClassifier:
             y_pred_probs = knn.predict_proba(test_hidden)
             y_conf_knn = y_pred_probs.max(axis=1)
             if emp_prob:
-                y_conf_knn = [
-                    sum(conf >= y_conf_knn) / len(y_conf_knn) for conf in y_conf_knn
-                ]
+                y_conf_knn = np.array(
+                    [sum(conf >= y_conf_knn) / len(y_conf_knn) for conf in y_conf_knn]
+                )
             if scale:
                 y_pred_knn = np.sum(y_pred_probs * np.array([0, 0.5, 1]), axis=1)
             else:
