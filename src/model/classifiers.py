@@ -1248,7 +1248,7 @@ class AdaptiveSentimentClassifier:
             rad = np.mean(k_dist)
 
             knn = RadiusNeighborsClassifier(radius=rad, weights="distance")
-            knn.fit(self.anchor_hidden, self.y_anchor)
+            knn.fit(self.anchor_hidden, self.y_anchor * 2)
             y_pred_probs = knn.predict_proba(test_hidden)
             y_conf_knn = y_pred_probs.max(axis=1)
             if predict_scale:
