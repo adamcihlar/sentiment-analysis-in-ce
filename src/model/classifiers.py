@@ -1498,7 +1498,9 @@ class AdaptiveSentimentClassifier:
         )
 
         target_ds.output_anchor_suggestions()
-        pass
+        return pd.DataFrame(
+            {"density": cls_sil_scores, "size": cls_sizes}, index=samples_to_label
+        )
 
     def _get_pca_dim_from_variance_ratio(self, hiddens, ratio):
         pca = PCA(min(hiddens.shape))
