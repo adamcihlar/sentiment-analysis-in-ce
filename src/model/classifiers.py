@@ -11,7 +11,7 @@ import pandas as pd
 import torch
 from coral_pytorch.dataset import corn_label_from_logits, levels_from_labelbatch
 from coral_pytorch.layers import CoralLayer
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 
 from coral_pytorch.losses import coral_loss, corn_loss
 from src.utils.losses import corn_loss_weighted
@@ -1215,6 +1215,7 @@ class AdaptiveSentimentClassifier:
         k=1,
         scale=True,
         emp_prob=False,
+        radius=False,
     ):
         """
         Predict label based on the nearest neighbor.
@@ -1241,6 +1242,19 @@ class AdaptiveSentimentClassifier:
                     for val in dist_dist_anch
                 ]
             )
+        elif radius:
+            euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
+            k_dist = np.sort(euc_dist_anch_mat, axis=1)[:, k - 1]
+            rad = np.mean(k_dist)
+
+            knn = RadiusNeighborsClassifier(radius=rad, weights="distance")
+            knn.fit(self.anchor_hidden, self.y_anchor)
+            y_pred_probs = knn.predict_proba(test_hidden)
+            y_conf_knn = y_pred_probs.max(axis=1)
+            if predict_scale:
+                y_pred_knn = y_pred_probs.max(axis=1)
+            else:
+                y_pred_knn = y_pred_probs.argmax(axis=1)
         else:
             knn = KNeighborsClassifier(n_neighbors=k, weights="distance")
             knn.fit(self.anchor_hidden, self.y_anchor * 2)
@@ -1270,7 +1284,15 @@ class AdaptiveSentimentClassifier:
         return y_pred_knn, y_conf_knn
 
     def mix_bulk_predict(
-        self, target_ds, knn=1, layer=None, dim_size=-1, scale=True, k=1, emp_prob=False
+        self,
+        target_ds,
+        knn=1,
+        layer=None,
+        dim_size=-1,
+        scale=True,
+        k=1,
+        emp_prob=False,
+        radius=False,
     ):
         """
         Ensemble of nearest neighbor and classifier prediction.
@@ -1293,9 +1315,11 @@ class AdaptiveSentimentClassifier:
             target_ds,
             knn=knn,
             layer=layer,
-            dim_size=dim_size,  # scale=scale,
+            dim_size=dim_size,
+            scale=scale,
             k=k,
             emp_prob=emp_prob,
+            radius=radius,
         )
         y_pred_knn_w = y_pred_knn * y_conf_knn
 
@@ -1352,6 +1376,19 @@ class AdaptiveSentimentClassifier:
                     for val in dist_dist_anch
                 ]
             )
+        elif radius:
+            euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
+            k_dist = np.sort(euc_dist_anch_mat, axis=1)[:, k - 1]
+            rad = np.mean(k_dist)
+
+            knn = RadiusNeighborsClassifier(radius=rad, weights="distance")
+            knn.fit(self.anchor_hidden, self.y_anchor)
+            y_pred_probs = knn.predict_proba(test_hidden)
+            y_conf_knn = y_pred_probs.max(axis=1)
+            if predict_scale:
+                y_pred_knn = y_pred_probs.max(axis=1)
+            else:
+                y_pred_knn = y_pred_probs.argmax(axis=1)
         else:
             knn = KNeighborsClassifier(n_neighbors=knn, weights="distance")
             knn.fit(self.anchor_hidden, self.y_anchor)
