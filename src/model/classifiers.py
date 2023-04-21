@@ -1318,7 +1318,7 @@ class AdaptiveSentimentClassifier:
             knn=knn,
             layer=layer,
             dim_size=dim_size,
-            scale=scale,
+            # scale=scale,
             k=k,
             emp_prob=emp_prob,
             radius=radius,
