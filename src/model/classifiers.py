@@ -1242,21 +1242,15 @@ class AdaptiveSentimentClassifier:
                     for val in dist_dist_anch
                 ]
             )
-        elif radius:
-            euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
-            k_dist = np.sort(euc_dist_anch_mat, axis=1)[:, k - 1]
-            rad = np.mean(k_dist)
-
-            knn = RadiusNeighborsClassifier(radius=rad, weights="distance")
-            knn.fit(self.anchor_hidden, self.y_anchor * 2)
-            y_pred_probs = knn.predict_proba(test_hidden)
-            y_conf_knn = y_pred_probs.max(axis=1)
-            if predict_scale:
-                y_pred_knn = y_pred_probs.max(axis=1)
-            else:
-                y_pred_knn = y_pred_probs.argmax(axis=1)
         else:
-            knn = KNeighborsClassifier(n_neighbors=k, weights="distance")
+            if radius:
+                euc_dist_anch_mat = distance_matrix(test_hidden, anchor_hidden)
+                k_dist = np.sort(euc_dist_anch_mat, axis=1)[:, k - 1]
+                rad = np.mean(k_dist)
+
+                knn = RadiusNeighborsClassifier(radius=rad, weights="distance")
+            else:
+                knn = KNeighborsClassifier(n_neighbors=k, weights="distance")
             knn.fit(self.anchor_hidden, self.y_anchor * 2)
             y_pred_probs = knn.predict_proba(test_hidden)
             y_conf_knn = y_pred_probs.max(axis=1)
