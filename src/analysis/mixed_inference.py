@@ -5,6 +5,9 @@ import pandas as pd
 from src.config import paths
 import itertools
 
+import statsmodels.api as sm
+from sklearn.preprocessing import OneHotEncoder
+
 
 def main(datasets):
     """
@@ -40,10 +43,15 @@ def main(datasets):
             name = filename.split(".json")[0]
             name = name.split(dataset + "_")[1]
             split_name = name.split("_")
+            df["ds"] = dataset
             df["layer"] = split_name[0]
             df["knn"] = split_name[1]
             df["pca"] = split_name[2]
             df["anchor_size"] = split_name[3]
+            if len(split_name) > 4:
+                df["empirical_conf"] = split_name[4]
+            else:
+                df["empirical_conf"] = False
 
             test_results_df = pd.concat([test_results_df, df], axis=0)
 
@@ -54,20 +62,7 @@ def main(datasets):
     return test_results_df
 
 
-if __name__ == "__main__":
-    datasets = ["facebook", "mall", "csfd"]
-    mix = main(datasets)
-
-    base_datasets = ["base_facebook", "base_mall", "base_csfd"]
-    base = main(base_datasets)
-
-    base_datasets = ["kmeans_mix_facebook", "kmeans_mix_mall", "kmeans_mix_csfd"]
-    base = main(base_datasets)
-
-    base_datasets = ["kmeans_facebook", "kmeans_mall", "kmeans_csfd"]
-    base = main(base_datasets)
-
-    ###
+def regression_to_analyze_mixed_inference_with_1nn():
     mall = pd.read_csv("output/train_info/inference/summary/mall.csv", index_col=0)
     base_mall = pd.read_csv(
         "output/train_info/inference/summary/base_mall.csv", index_col=0
@@ -126,8 +121,60 @@ if __name__ == "__main__":
     y = ds.iloc[:, 0]
     X = ds.iloc[:, 1:]
 
-    import statsmodels.api as sm
-    from sklearn.preprocessing import OneHotEncoder
+    ohc_cols = []
+    ohc_col_names = []
+    for col in X.columns:
+        uniq = X[col].unique()[1:]
+        for val in uniq:
+            ohc_cols.append((X[col] == val) * 1)
+            ohc_col_names.append(val)
+    X_tr = pd.concat(ohc_cols, axis=1)
+    X_tr.columns = ohc_col_names
+    X_tr = sm.add_constant(X_tr)
+
+    mod = sm.OLS(y, X_tr).fit()
+    print(mod.summary())
+    pass
+
+
+if __name__ == "__main__":
+    hdbscan_datasets = ["facebook", "mall", "csfd"]
+    hdbscan_mix = main(hdbscan_datasets)
+
+    hdbscan_base_datasets = ["base_facebook", "base_mall", "base_csfd"]
+    hdbscan_base = main(hdbscan_base_datasets)
+
+    kmeans_datasets = ["kmeans_mix_facebook", "kmeans_mix_mall", "kmeans_mix_csfd"]
+    kmeans_mix = main(kmeans_datasets)
+
+    kmeans_base_datasets = ["kmeans_facebook", "kmeans_mall", "kmeans_csfd"]
+    kmeans_base = main(kmeans_base_datasets)
+
+    knn_datasets = ["knn_mix_facebook", "knn_mix_mall", "knn_mix_csfd"]
+    knn_mix = main(knn_datasets)
+
+    # linear regression
+    knn_mix_mall = pd.read_csv(
+        "output/train_info/inference/summary/knn_mix_mall.csv", index_col=0
+    )
+    knn_mix_facebook = pd.read_csv(
+        "output/train_info/inference/summary/knn_mix_facebook.csv", index_col=0
+    )
+    knn_mix_csfd = pd.read_csv(
+        "output/train_info/inference/summary/knn_mix_csfd.csv", index_col=0
+    )
+
+    ds = pd.concat([knn_mix_csfd, knn_mix_mall, knn_mix_facebook])
+
+    ds = ds.drop(columns=["mae", "rmse"])
+    # ds = ds.drop(columns=["mae", "rmse", 'ds'])
+
+    ds = ds.loc[ds.anchor_size==100]
+    ds = ds.loc[ds.ds=='knn_mix_facebook']
+    ds = ds.drop(columns='ds')
+
+    y = ds.iloc[:, 0]
+    X = ds.iloc[:, 1:]
 
     ohc_cols = []
     ohc_col_names = []
@@ -141,4 +188,4 @@ if __name__ == "__main__":
     X_tr = sm.add_constant(X_tr)
 
     mod = sm.OLS(y, X_tr).fit()
-    mod.summary()
+    print(mod.summary())
