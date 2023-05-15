@@ -1175,7 +1175,7 @@ class AdaptiveSentimentClassifier:
         dataset.
         Return vector of cosine similarities and save it as attribute.
         """
-        if self.hiddens is None:
+        if self.hiddens is None or self.hiddens.shape[0] != len(target_ds.X):
             preds, hiddens = self.bulk_predict(
                 target_ds, predict_scale=True, output_hidden=layer
             )
@@ -1433,7 +1433,11 @@ class AdaptiveSentimentClassifier:
         Then centroids of the clusters.
         Samples closest to the centroids are the samples to label.
         """
-        if self.hiddens_full is None or self.layer != layer:
+        if (
+            self.hiddens_full is None
+            or self.layer != layer
+            or self.hiddens.shape[0] != len(target_ds.X)
+        ):
             preds, hiddens = self.bulk_predict(
                 target_ds, predict_scale=True, output_hidden=layer
             )

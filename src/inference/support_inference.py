@@ -14,7 +14,7 @@ from src.utils.text_preprocessing import Preprocessor
 from loguru import logger
 
 
-def main(scale):
+def main(scale, external_anchor_set):
     model = AdaptiveSentimentClassifier(
         Preprocessor(),
         Tokenizer(),
@@ -34,19 +34,19 @@ def main(scale):
     target_ds.create_dataloader(4, False)
 
     logger.info("Getting the semantic representations for your input data")
-    model.bulk_predict(target_ds, predict_scale=True, output_hidden=sip.LAYER)
-
     model.suggest_anchor_set(
         target_ds,
         layer=sip.LAYER,
         dim_size=sip.DIM_SIZE,
         anchor_set_size=sip.SUPPORT_SET_SIZE,
     )
-    input(
-        "After labelling the data and saving the file, hit ENTER to continue the evaluation.\n"
-    )
 
-    target_ds.read_anchor_set()
+    if not external_anchor_set:
+        input(
+            "After labelling the data and saving the file, hit ENTER to continue the evaluation.\n"
+        )
+
+    target_ds.read_anchor_set(external_anchor_set)
 
     y_pred = model.mix_bulk_predict(
         target_ds,
@@ -59,9 +59,9 @@ def main(scale):
         radius=True,
     )
 
-    target_df = target_ds.get_predictions()
+    target_df = target_ds.get_predictions(external_anchor_set=external_anchor_set)
     save_pth = os.path.join(paths.OUTPUT_PREDICTIONS, "emails.csv")
-    test_df.to_csv(save_pth)
+    target_df.to_csv(save_pth)
     logger.info(f"Results saved at {save_pth}.")
     pass
 

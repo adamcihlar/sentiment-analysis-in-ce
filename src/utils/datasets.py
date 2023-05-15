@@ -303,11 +303,17 @@ class ClassificationDataset:
         )
         pass
 
-    def get_predictions(self, include_inputs=True):
-        if include_inputs:
-            predictions = pd.DataFrame({"X": self.X, "y_pred": self.y_pred})
+    def get_predictions(self, include_inputs=True, external_anchor_set=False):
+        if external_anchor_set:
+            X = self.X.loc[self.y.isna()]
+            y_pred = self.y_pred.loc[self.y.isna()]
         else:
-            predictions = pd.DataFrame({"y_pred": self.y_pred})
+            X = self.X
+            y_pred = self.y_pred
+        if include_inputs:
+            predictions = pd.DataFrame({"X": X, "y_pred": y_pred})
+        else:
+            predictions = pd.DataFrame({"y_pred": y_pred})
         return predictions
 
     def save_predictions(self, path):
@@ -370,7 +376,7 @@ class ClassificationDataset:
             )
         pass
 
-    def read_anchor_set(self):
+    def read_anchor_set(self, external=False):
         assert self.X is not None
         self.y = pd.Series(np.nan, index=self.X.index)
         files = [
@@ -379,8 +385,19 @@ class ClassificationDataset:
             if os.path.isfile(os.path.join(paths.INPUT_ANCHOR, f))
         ]
         if len(files) == 1:
-            anchor = pd.read_csv(files[0], index_col=0)
-            self.y = pd.concat([self.y, anchor], axis=1).iloc[:, 2]
+            if external:
+                anchor = pd.read_csv(files[0])
+                if len(anchor.columns) > 2:
+                    anchor = pd.read_csv(files[0], index_col=0)
+                self.y = pd.concat(
+                    [self.y, anchor.iloc[:, 1]], axis=0, ignore_index=True
+                ).reset_index(drop=True)
+                self.X = pd.concat(
+                    [self.X, anchor.iloc[:, 0]], axis=0, ignore_index=True
+                ).reset_index(drop=True)
+            else:
+                anchor = pd.read_csv(files[0], index_col=0)
+                self.y = pd.concat([self.y, anchor], axis=1).iloc[:, 2]
         else:
             logger.error(
                 f"Please put only one csv file with anchor samples to {paths.INPUT_ANCHOR} directory."
