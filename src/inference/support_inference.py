@@ -33,15 +33,13 @@ def main(scale, external_anchor_set):
     target_ds.create_dataset()
     target_ds.create_dataloader(4, False)
 
-    logger.info("Getting the semantic representations for your input data")
-    model.suggest_anchor_set(
-        target_ds,
-        layer=sip.LAYER,
-        dim_size=sip.DIM_SIZE,
-        anchor_set_size=sip.SUPPORT_SET_SIZE,
-    )
-
     if not external_anchor_set:
+        model.suggest_anchor_set(
+            target_ds,
+            layer=sip.LAYER,
+            dim_size=sip.DIM_SIZE,
+            anchor_set_size=sip.SUPPORT_SET_SIZE,
+        )
         input(
             "After labelling the data and saving the file, hit ENTER to continue the evaluation.\n"
         )
@@ -67,4 +65,4 @@ def main(scale, external_anchor_set):
 
 
 if __name__ == "__main__":
-    main(True)
+    main(True, True)

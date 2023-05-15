@@ -1130,6 +1130,7 @@ class AdaptiveSentimentClassifier:
         preds = []
         hiddens = []
         n_steps = len(dataset.torch_dataloader)
+        logger.info("Getting the semantic representations for the input data")
         progress_bar = tqdm(range(n_steps))
         for batch in dataset.torch_dataloader:
             batch = {k: v.to(device) for k, v in batch.items()}
