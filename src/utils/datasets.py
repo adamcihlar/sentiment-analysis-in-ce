@@ -347,7 +347,7 @@ class ClassificationDataset:
         save_path = os.path.join(paths.INPUT_ANCHOR, "anchor_set.csv")
         text_to_label.to_csv(save_path)
         logger.info(
-            f"Suggested samples for labelling saved to {save_path}. Label as much as you wish, preferably beginning from the top and save the file."
+            f"Suggested samples for labelling saved to {save_path}. Label as much as you wish and save the file in the same directory - {save_path} - in the same format.\n Labels: 0 = negative, 1 = neutral, 2 = positive"
         )
         pass
 
