@@ -48,7 +48,7 @@ def main(scale):
 
     target_ds.read_anchor_set()
 
-    y_pred = asc.mix_bulk_predict(
+    y_pred = model.mix_bulk_predict(
         target_ds,
         knn=1,
         layer=sip.LAYER,

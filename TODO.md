@@ -1,5 +1,6 @@
 ### Tasks
 * Next steps
+- [ ] Cover the scenario, if user input seperately anchor set and test set
 
 * **Main streams**
 - [x] Finetuning on all three datasets - resources?
@@ -8,13 +9,13 @@
     * Send preprocessed emails back to Stepan - he might arrange a labelling experiment
 - [x] Data
     * Get train, val, test splits
-- [ ] Adaptation
+- [x] Adaptation
     * Adaptation parameters analysis
     * Adapt the target
 - [ ] Inference (interface, interaction, output structure)
 
 * **Other**
-- [ ] Gradient clipping https://discuss.pytorch.org/t/check-the-norm-of-gradients/27961
+- [x] Gradient clipping https://discuss.pytorch.org/t/check-the-norm-of-gradients/27961
     * Norm clipping https://github.com/rasbt/deeplearning-models/blob/master/pytorch_ipynb/tricks/gradclipping_mlp.ipynb
 - [ ] Put all params to config
     * If arguments not passed from CLI, take the defaults from config

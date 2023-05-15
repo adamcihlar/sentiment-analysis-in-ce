@@ -20,7 +20,7 @@ from loguru import logger
 from sklearn.metrics import confusion_matrix
 from hdbscan import HDBSCAN
 from src.config import paths
-from src.config.parameters import ClassifierParams, DiscriminatorParams
+from src.config.parameters import ClassifierParams, DiscriminatorParams, RANDOM_STATE
 from src.model.encoders import Encoder
 from src.model.tokenizers import Tokenizer
 from src.utils.datasets import ClassificationDataset, save_train_info
@@ -1510,7 +1510,7 @@ class AdaptiveSentimentClassifier:
                 cls_sil_scores = cls_sil_scores + [-1 for _ in range(n_to_sample)]
         else:
             # kmeans clustering
-            kmeans = KMeans(anchor_set_size)
+            kmeans = KMeans(anchor_set_size, random_state=RANDOM_STATE)
             labs = kmeans.fit_predict(hiddens)
             labs_list = pd.Series(labs).unique()
             sil_samples = silhouette_samples(hiddens, labs)
