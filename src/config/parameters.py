@@ -83,3 +83,12 @@ class AdaptationOptimizationParams:
 class InferenceParams:
     PREDICT_PROBS = True
     TEMPERATURE = 1
+
+
+# SUPPORT INFERENCE parameters
+class SupportInferenceParams:
+    LAYER = -1
+    DIM_SIZE = 0.999
+    SUPPORT_SET_SIZE = 100
+    K = 15
+    EMP_CONF = True
