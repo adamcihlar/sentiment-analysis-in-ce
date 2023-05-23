@@ -1162,6 +1162,7 @@ class AdaptiveSentimentClassifier:
 
             progress_bar.update(1)
         dataset.y_pred = preds
+        self.nn_preds = preds
 
         if output_hidden:
             hiddens = torch.cat(hiddens, dim=0)
