@@ -28,12 +28,12 @@ def main(scale, external_anchor_set):
     target_ds = ClassificationDataset(None)
     target_ds.read_user_input()
 
-    target_ds.preprocess(model.preprocessor)
-    target_ds.tokenize(model.tokenizer)
-    target_ds.create_dataset()
-    target_ds.create_dataloader(4, False)
-
     if not external_anchor_set:
+        target_ds.preprocess(model.preprocessor)
+        target_ds.tokenize(model.tokenizer)
+        target_ds.create_dataset()
+        target_ds.create_dataloader(4, False)
+
         model.suggest_anchor_set(
             target_ds,
             layer=sip.LAYER,
@@ -45,6 +45,12 @@ def main(scale, external_anchor_set):
         )
 
     target_ds.read_anchor_set(external_anchor_set)
+
+    if external_anchor_set:
+        target_ds.preprocess(model.preprocessor)
+        target_ds.tokenize(model.tokenizer)
+        target_ds.create_dataset()
+        target_ds.create_dataloader(4, False)
 
     y_pred = model.mix_bulk_predict(
         target_ds,
@@ -65,4 +71,7 @@ def main(scale, external_anchor_set):
 
 
 if __name__ == "__main__":
-    main(True, True)
+    scale = True
+    external_anchor_set = False
+
+    main(scale, external_anchor_set)

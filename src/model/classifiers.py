@@ -1453,6 +1453,7 @@ class AdaptiveSentimentClassifier:
                 dim_size = self._get_pca_dim_from_variance_ratio(hiddens, dim_size)
             self.dim_size = dim_size
             self.pca = PCA(dim_size)
+            print("Dim size: ", dim_size)
             hiddens = self.pca.fit_transform(hiddens)
 
         self.hiddens = hiddens
