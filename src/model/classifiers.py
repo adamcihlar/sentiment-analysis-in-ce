@@ -1255,6 +1255,9 @@ class AdaptiveSentimentClassifier:
             else:
                 knn = KNeighborsClassifier(n_neighbors=k, weights="distance")
             knn.fit(self.anchor_hidden, self.y_anchor * 2)
+            import ipdb
+
+            ipdb.set_trace()
             y_pred_probs = knn.predict_proba(test_hidden)
             y_conf_knn = y_pred_probs.max(axis=1)
             if emp_prob:
