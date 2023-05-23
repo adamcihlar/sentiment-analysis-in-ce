@@ -1191,6 +1191,7 @@ class AdaptiveSentimentClassifier:
                 hiddens = self.pca.fit_transform(hiddens)
 
             self.hiddens = hiddens
+            self.nn_preds = preds
         else:
             hiddens = self.hiddens
 
@@ -1327,7 +1328,7 @@ class AdaptiveSentimentClassifier:
 
         # cls prediction
         cls_conf = 1 - y_conf_knn
-        y_pred_cls = np.array(target_ds.y_pred)[list(target_ds.y.isna())]
+        y_pred_cls = np.array(self.nn_preds)[list(target_ds.y.isna())]
         y_pred_cls_w = y_pred_cls * cls_conf
 
         # combined prediction
