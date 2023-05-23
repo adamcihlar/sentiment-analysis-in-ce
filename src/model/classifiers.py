@@ -1437,7 +1437,7 @@ class AdaptiveSentimentClassifier:
         if (
             self.hiddens_full is None
             or self.layer != layer
-            or self.hiddens.shape[0] != len(target_ds.X)
+            or (self.hiddens is not None and self.hiddens.shape[0] != len(target_ds.X))
         ):
             preds, hiddens = self.bulk_predict(
                 target_ds, predict_scale=True, output_hidden=layer
