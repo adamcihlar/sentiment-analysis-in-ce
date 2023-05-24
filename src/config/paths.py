@@ -28,7 +28,7 @@ DATA_PROCESSED_CSFD = os.path.join(DATA_PROCESSED, "csfd.csv")
 DATA_PROCESSED_MALL = os.path.join(DATA_PROCESSED, "mall.csv")
 DATA_PROCESSED_RESPONSES = os.path.join(DATA_PROCESSED, "responses.csv")
 DATA_PROCESSED_RESPONSES_CONFIRMED = os.path.join(
-    DATA_PROCESSED, "responses_confirmed.csv"
+    DATA_PROCESSED, "responses_confirmed_v2.csv"
 )
 
 DATA_PROCESSED_CONCAT = os.path.join(DATA_PROCESSED, "concat_dataset.csv")
