@@ -8,6 +8,8 @@ import itertools
 import statsmodels.api as sm
 from sklearn.preprocessing import OneHotEncoder
 
+datasets = ["knn_radius_mix_csfd", "knn_radius_mix_facebook", "knn_radius_mix_mall"]
+
 
 def main(datasets):
     """
@@ -20,7 +22,7 @@ def main(datasets):
     hardcoded).
     """
     for dataset in datasets:
-        path_to_results = paths.OUTPUT_INFO_INFERENCE
+        path_to_results = os.path.join(paths.OUTPUT_INFO_INFERENCE, "ensemble")
         re_pattern = "^" + dataset
 
         files = os.listdir(path_to_results)
@@ -169,9 +171,72 @@ if __name__ == "__main__":
     ds = ds.drop(columns=["mae", "rmse"])
     # ds = ds.drop(columns=["mae", "rmse", 'ds'])
 
-    ds = ds.loc[ds.anchor_size==100]
-    ds = ds.loc[ds.ds=='knn_mix_facebook']
-    ds = ds.drop(columns='ds')
+    ds = ds.loc[ds.anchor_size == 100]
+    ds = ds.loc[ds.ds == "knn_mix_facebook"]
+    ds = ds.drop(columns="ds")
+
+    y = ds.iloc[:, 0]
+    X = ds.iloc[:, 1:]
+
+    ohc_cols = []
+    ohc_col_names = []
+    for col in X.columns:
+        uniq = X[col].unique()[1:]
+        for val in uniq:
+            ohc_cols.append((X[col] == val) * 1)
+            ohc_col_names.append(val)
+    X_tr = pd.concat(ohc_cols, axis=1)
+    X_tr.columns = ohc_col_names
+    X_tr = sm.add_constant(X_tr)
+
+    mod = sm.OLS(y, X_tr).fit()
+    print(mod.summary())
+
+    anch = 300
+
+    rnn_mix_csfd = pd.read_csv(
+        "output/train_info/inference/summary/knn_radius_mix_csfd.csv", index_col=0
+    )
+    rnn_mix_csfd.loc[
+        (rnn_mix_csfd.anchor_size == anch) & (rnn_mix_csfd.empirical_conf == "True")
+    ].sort_values("f1-score")
+
+    rnn_mix_mall = pd.read_csv(
+        "output/train_info/inference/summary/knn_radius_mix_mall.csv", index_col=0
+    )
+    rnn_mix_mall.loc[
+        (rnn_mix_mall.anchor_size == anch) & (rnn_mix_mall.empirical_conf == "True")
+    ].sort_values("f1-score")
+
+    rnn_mix_facebook = pd.read_csv(
+        "output/train_info/inference/summary/knn_radius_mix_facebook.csv", index_col=0
+    )
+    rnn_mix_facebook.loc[
+        (rnn_mix_facebook.anchor_size == anch)
+        & (rnn_mix_facebook.empirical_conf == "True")
+    ].sort_values("f1-score")
+
+    rnn_mix_facebook = pd.read_csv(
+        "output/train_info/inference/ensemble/summary/knn_radius_mix_facebook.csv",
+        index_col=0,
+    )
+    rnn_mix_mall = pd.read_csv(
+        "output/train_info/inference/ensemble/summary/knn_radius_mix_mall.csv",
+        index_col=0,
+    )
+    rnn_mix_csfd = pd.read_csv(
+        "output/train_info/inference/ensemble/summary/knn_radius_mix_csfd.csv",
+        index_col=0,
+    )
+    ds = pd.concat([rnn_mix_csfd, rnn_mix_mall, rnn_mix_facebook])
+
+    ds = ds.drop(columns=["mae", "rmse"])
+    # ds = ds.drop(columns=["mae", "rmse", 'ds'])
+
+    ds = ds.loc[ds.anchor_size == 200]
+    ds = ds.loc[ds.ds == "knn_radius_mix_mall"]
+    ds.sort_values("f1-score")
+    ds = ds.drop(columns="ds")
 
     y = ds.iloc[:, 0]
     X = ds.iloc[:, 1:]
