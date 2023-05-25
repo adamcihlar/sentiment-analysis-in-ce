@@ -69,6 +69,8 @@ def get_regression_model_data(
     for i in range(len(X_cols)):
         if X_type[i] == "discrete":
             uniq = X[X_cols[i]].unique()[1:]
+            if X_cols[i] == "identity":
+                uniq = pd.Series(["A", "B", "C", "D"])
             for val in uniq:
                 cols.append((X[X_cols[i]] == val) * 1)
                 col_names.append(X_cols[i] + "_" + str(val))
@@ -99,9 +101,77 @@ def get_regression_model_data(
     return X, y
 
 
-def model(X, y):
-    mod = sm.OLS(y, X).fit()
+def model(X, y, **kvargs):
+    mod = sm.OLS(y, X).fit(**kvargs)
     print(mod.summary())
+    return mod
+
+
+def main():
+    # mul_answers_per_ico sample,  explain by identity, control week with cluster
+    # errors
+    df = get_df()
+    X, y = get_regression_model_data(
+        df,
+        X_cols=["identity", "week"],
+        y_col="y_pred",
+        X_type=["discrete", "continuous"],
+        sample_reduction="mul_answers_per_ico",
+        interactions=[],
+        constant=True,
+    )
+    mod = model(X, y, cov_type="cluster", cov_kwds={"groups": X.week})
+    print(mod.summary().as_latex())
+
+    # mul_answers_per_ico sample,  explain by CZ x rest, control week with cluster
+    # errors
+    df = get_df()
+    df["CZ"] = df.identity == "CZ"
+    X, y = get_regression_model_data(
+        df,
+        X_cols=["CZ", "week"],
+        y_col="y_pred",
+        X_type=["discrete", "continuous"],
+        sample_reduction="mul_answers_per_ico",
+        interactions=[],
+        constant=True,
+    )
+    mod = model(X, y, cov_type="cluster", cov_kwds={"groups": X.week})
+    wk = X.week
+    X = X.iloc[:, :-1]
+    model(X, y, cov_type="cluster", cov_kwds={"groups": wk})
+    print(mod.summary().as_latex())
+
+    # mul_answers_per_ico sample,  explain by identity, control continuous week
+    # interaction week*identity
+    df = get_df()
+    X, y = get_regression_model_data(
+        df,
+        X_cols=["identity", "week"],
+        y_col="y_pred",
+        X_type=["discrete", "continuous"],
+        sample_reduction="mul_answers_per_ico",
+        interactions=[("identity", "week")],
+        constant=True,
+    )
+    mod = model(X, y, cov_type="HC3")
+    print(mod.summary().as_latex())
+
+    # mul_answers_per_ico sample,  explain by CZ x rest, control continuous week
+    # interaction week*identity
+    df = get_df()
+    df["CZ"] = df.identity == "CZ"
+    X, y = get_regression_model_data(
+        df,
+        X_cols=["CZ", "week"],
+        y_col="y_pred",
+        X_type=["discrete", "continuous"],
+        sample_reduction="mul_answers_per_ico",
+        interactions=[("CZ", "week")],
+        constant=True,
+    )
+    mod = model(X, y, cov_type="HC3")
+    print(mod.summary().as_latex())
     pass
 
 
@@ -202,6 +272,7 @@ if __name__ == "__main__":
         constant=True,
     )
     model(X, y)
+    model(X, y, cov_type="cluster", cov_kwds={"groups": X.week})
 
     # mul_answers_per_ico sample,  explain by CZ x rest, control discrete week
     df = get_df()
@@ -246,7 +317,7 @@ if __name__ == "__main__":
         interactions=[("CZ", "week")],
         constant=True,
     )
-    model(X, y)
+    model(X, y, cov_type="HC3")
 
     ### LIMITED SAMPLE
     # mul_answers_per_ico sample,  explain by identity, control continuous week
@@ -276,4 +347,11 @@ if __name__ == "__main__":
         interactions=[("CZ", "week")],
         constant=True,
     )
-    model(X, y)
+    model(X, y, cov_type="HC3")
+
+    df.text.value_counts()
+    len(df.mail_text.value_counts())
+
+    df.to_csv("output/emails_merged.csv")
+
+    df.columns
