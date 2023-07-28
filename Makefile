@@ -76,8 +76,8 @@ run_app: docker_build_app
 api:
 	python -m src.api.model_api
 
-run_api: docker_build_api
-	docker run --rm -it -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_api /bin/bash
+run_api: #docker_build_api
+	docker run --rm -it -v $$PWD:/app -w /app -p 8001:8001 sentiment_analysis_in_ce_api /bin/bash
 
 run_inference: docker_build_inference
 	docker run --rm -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_inference /bin/bash
