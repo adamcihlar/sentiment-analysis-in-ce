@@ -74,6 +74,9 @@ clean_adaptation:
 	sudo rm -r -i output/train_info/adapted
 
 # run solution
+finetune_on_source:
+	python -m src.scripts.source_finetuning
+
 app:
 	python -m src.app.app
 
