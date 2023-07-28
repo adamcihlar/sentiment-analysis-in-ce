@@ -98,5 +98,5 @@ run_predictions: docker_build_inference
 supported_predictions:
 	python -m src.inference.support_inference
 
-run_supported_predictions: docker_build_inference
+run_supported_predictions: docker_build_supported_inference
 	docker run --rm -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_supported_inference
