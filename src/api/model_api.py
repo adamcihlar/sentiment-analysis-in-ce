@@ -24,8 +24,8 @@ def main():
         Encoder(),
         ClassificationHead,
         Discriminator(),
-        Encoder(path_to_finetuned=paths.OUTPUT_MODELS_ADAPTED_ENCODER_FINAL),
-        paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL,
+        Encoder(path_to_finetuned=paths.OUTPUT_PROD_ENCODER),
+        paths.OUTPUT_PROD_CLASSIFIER,
     )
 
     @fastapi_app.post("/query")
