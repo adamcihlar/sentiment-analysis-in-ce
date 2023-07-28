@@ -49,7 +49,7 @@ class ClassifierParams:
     NUM_CLASSES = 3
     DROPOUT = 0.1
     TASK = "ordinal"
-    SHARE_CLASSIFIER = False
+    SHARE_CLASSIFIER = True
 
 
 # DISCRIMINATOR parameters
