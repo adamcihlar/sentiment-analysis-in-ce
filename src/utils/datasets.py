@@ -353,7 +353,7 @@ class ClassificationDataset:
         save_path = os.path.join(paths.INPUT_ANCHOR, "anchor_set.csv")
         text_to_label.to_csv(save_path)
         logger.info(
-            f"Suggested samples for labelling saved to {save_path}. Label as much as you wish and save the file in the same directory - {save_path} - in the same format.\n Labels: 0 = negative, 1 = neutral, 2 = positive"
+            f"Suggested samples for labelling saved to {save_path}. Label the texts and save the file in the same directory - {save_path} - in the same format.\n Labels: 0 = negative, 1 = neutral, 2 = positive"
         )
         pass
 
@@ -372,7 +372,7 @@ class ClassificationDataset:
                 self.y = pd.Series(np.nan, index=target.index)
         else:
             logger.error(
-                f"Please put only one csv file that you want to evaluate to {paths.INPUT} directory."
+                f"Please put one csv file with texts that you want to evaluate to {paths.INPUT} directory."
             )
         pass
 
