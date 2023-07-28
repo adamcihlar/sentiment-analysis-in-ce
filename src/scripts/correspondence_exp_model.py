@@ -23,6 +23,19 @@ def get_df(new=False):
 
         sent_df = read_raw_sent()
 
+        ico_first_date = pd.DataFrame(sent_df.groupby("ico").min().date).reset_index()
+        ico_first_date["join"] = ico_first_date.ico.astype(
+            str
+        ) + ico_first_date.date.astype(str)
+
+        sent_df["join"] = sent_df.ico.astype(str) + sent_df.date.astype(str)
+
+        merged = sent_df.merge(ico_first_date, how="left", on="join")
+        merged["sent_first"] = False
+        merged["sent_first"].loc[~merged.ico_y.isna()] = True
+
+        sent_df["sent_first"] = merged["sent_first"]
+
         predictions_df = pd.read_csv("output/predictions/emails.csv", index_col=0)
         responses_df = responses_df.reset_index(drop=True)
 
@@ -120,7 +133,9 @@ def main():
         interactions=[],
         constant=True,
     )
-    mod = model(X, y, cov_type="cluster", cov_kwds={"groups": X.week})
+    wk = X.week
+    X = X.iloc[:, :-1]
+    mod = model(X, y, cov_type="cluster", cov_kwds={"groups": wk})
     print(mod.summary().as_latex())
 
     # mul_answers_per_ico sample,  explain by CZ x rest, control week with cluster
@@ -136,10 +151,27 @@ def main():
         interactions=[],
         constant=True,
     )
-    mod = model(X, y, cov_type="cluster", cov_kwds={"groups": X.week})
     wk = X.week
     X = X.iloc[:, :-1]
-    model(X, y, cov_type="cluster", cov_kwds={"groups": wk})
+    mod = model(X, y, cov_type="cluster", cov_kwds={"groups": wk})
+    print(mod.summary().as_latex())
+
+    # mul_answers_per_ico sample,  explain by CZ x rest, control week with cluster
+    # errors
+    df = get_df()
+    df["CZ"] = df.identity == "CZ"
+    X, y = get_regression_model_data(
+        df,
+        X_cols=["CZ", "sent_first", "week"],
+        y_col="y_pred",
+        X_type=["discrete", "discrete", "continuous"],
+        sample_reduction="mul_answers_per_ico",
+        interactions=[],
+        constant=True,
+    )
+    wk = X.week
+    X = X.iloc[:, :-1]
+    mod = model(X, y, cov_type="cluster", cov_kwds={"groups": wk})
     print(mod.summary().as_latex())
 
     # mul_answers_per_ico sample,  explain by identity, control continuous week

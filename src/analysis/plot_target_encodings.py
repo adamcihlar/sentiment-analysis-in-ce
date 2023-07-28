@@ -14,6 +14,47 @@ from src.reading.readers import read_raw_sent, read_preprocessed_emails
 from sklearn.decomposition import PCA
 import plotly.express as px
 
+
+def get_df(new=False):
+    """
+    Load the dfs, merge them and save.
+    Or just load the merged DataFrame.
+    """
+    if new:
+        responses_df = read_preprocessed_emails()
+        responses_df = responses_df[~responses_df.invalid]
+
+        sent_df = read_raw_sent()
+
+        ico_first_date = pd.DataFrame(sent_df.groupby("ico").min().date).reset_index()
+        ico_first_date["join"] = ico_first_date.ico.astype(
+            str
+        ) + ico_first_date.date.astype(str)
+
+        sent_df["join"] = sent_df.ico.astype(str) + sent_df.date.astype(str)
+
+        merged = sent_df.merge(ico_first_date, how="left", on="join")
+        merged["sent_first"] = False
+        merged["sent_first"].loc[~merged.ico_y.isna()] = True
+
+        sent_df["sent_first"] = merged["sent_first"]
+
+        predictions_df = pd.read_csv("output/predictions/emails.csv", index_col=0)
+        responses_df = responses_df.reset_index(drop=True)
+
+        responses = predictions_df.merge(
+            responses_df, how="inner", left_index=True, right_index=True
+        )
+        responses = responses[["y_pred", "id_2", "X"]]
+
+        df = sent_df.merge(responses, how="inner", left_on="id", right_on="id_2")
+
+        df.to_csv("data/final/emails_merged.csv")
+    else:
+        df = pd.read_csv("data/final/emails_merged.csv", index_col=0)
+    return df
+
+
 model = ("seznamsmall-e-czech_20230218-071534", "5", "csfd_facebook_mall", "ordinal")
 enc = "_".join([model[0], model[1]])
 enc_pth = os.path.join(paths.OUTPUT_MODELS_FINETUNED_ENCODER, enc)
@@ -181,10 +222,10 @@ fig = px.scatter(
     # size_max=100000
     template="plotly_white",
 )
-fig.update_layout(yaxis_title=None)
-fig.update_layout(xaxis_title=None)
+fig.update_layout(yaxis_title="Component 2")
+fig.update_layout(xaxis_title="Component 1")
 fig.update_layout(legend=dict(font=dict(size=200)))
-fig.write_html("output/assets/emails_target_pred_base.html")
+fig.write_html("output/assets/emails_target_pred_base_axis.html")
 
 hiddens_df.iloc[2419]
 is_anch.iloc[2419]
@@ -205,10 +246,10 @@ fig = px.scatter(
     symbol_sequence=["circle-open", "circle"],
     template="plotly_white",
 )
-fig.update_layout(yaxis_title=None)
-fig.update_layout(xaxis_title=None)
+fig.update_layout(yaxis_title="Component 2")
+fig.update_layout(xaxis_title="Component 1")
 fig.update_layout(showlegend=False)
-fig.write_html("output/assets/emails_target_pred_ensemble.html")
+fig.write_html("output/assets/emails_target_pred_ensemble_axis.html")
 
 cls = hiddens_df[[0, 1, "cls", "anchor"]]
 cls["wrap"] = "ensemble"
@@ -272,3 +313,32 @@ fig = px.histogram(
 fig.update_layout(yaxis_title=None)
 fig.update_layout(xaxis_title=None)
 fig.write_html("output/assets/emails_target_pred_dist_base.html")
+
+# New histograms
+df = get_df()
+anchor_df = pd.read_csv("input/anchor/anchor_set.csv", index_col=0)
+df["anchor"] = 0
+found_anch = anchor_df.loc[anchor_df.index.isin(df.index)]
+df.anchor.loc[found_anch.index] = 1
+
+# restrict the sample?
+icos = df.groupby(["ico"]).id_2.nunique() > 1
+sel_icos = icos.loc[icos].index
+df = df.loc[df.ico.isin(sel_icos)]
+
+df_nat = df.loc[~df.foreigner]
+df_for = df.loc[df.foreigner]
+
+fig = px.histogram(
+    df,
+    x="y_pred",
+    template="plotly_white",
+    color="foreigner",
+    color_discrete_sequence=["#4A6274", "#E2725A"],  # "#79AEB2"],
+    barmode="overlay",
+    histnorm="probability density",
+)
+fig.update_layout(yaxis_title=None)
+fig.update_layout(xaxis_title=None)
+fig.update_layout(showlegend=False)
+fig.write_html("output/assets/emails_target_pred_dist_nat_for_full.html")
