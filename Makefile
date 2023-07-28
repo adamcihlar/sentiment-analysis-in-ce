@@ -1,4 +1,11 @@
 # installation
+docker_build_supported_inference:
+	docker image prune -f
+	yes | cp -rf ./docker/supported_inference/Dockerfile Dockerfile
+	docker build -t sentiment_analysis_in_ce_supported_inference .
+	docker image prune -f
+	rm -f Dockerfile
+
 docker_build_inference:
 	docker image prune -f
 	yes | cp -rf ./docker/inference/Dockerfile Dockerfile
@@ -76,8 +83,17 @@ run_app: docker_build_app
 api:
 	python -m src.api.model_api
 
-run_api: #docker_build_api
+run_api: docker_build_api
 	docker run --rm -it -v $$PWD:/app -w /app -p 8001:8001 sentiment_analysis_in_ce_api
 
-run_inference: docker_build_inference
-	docker run --rm -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_inference /bin/bash
+predictions:
+	python -m src.inference.inference
+
+run_predictions: docker_build_inference
+	docker run --rm -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_inference
+
+supported_predictions:
+	python -m src.inference.support_inference
+
+run_supported_predictions: docker_build_inference
+	docker run --rm -v $$PWD:/app -w /app -p 5001:5001 sentiment_analysis_in_ce_supported_inference
