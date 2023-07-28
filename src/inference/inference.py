@@ -58,27 +58,8 @@ def evaluate(model: Type[AdaptiveSentimentClassifier], path_to_test: str):
 
 if __name__ == "__main__":
     texts = [
-        "tohle smrdi",
-        "tvoje mam je zidlicka",
-        "miluju zidlicky",
-        "uplne k nicemu",
-        "tohle smrdi",
-        "tohle smrdi",
-        "tvoje mam je zidlicka",
-        "miluju zidlicky",
-        "uplne k nicemu",
-        "tvoje mam je zidlicka",
-        "tvoje mam je zidlicka",
-        "miluju zidlicky",
-        "uplne k nicemu",
-        "tohle smrdi",
-        "miluju zidlicky",
-        "uplne k nicemu",
-        "tohle smrdi",
-        "tohle smrdi",
-        "tohle jsou nejlepsi zidlicky",
-        "tohle smrdi",
-        "super!!!",
+        "prvni veta",
+        "druha veta",
     ]
 
     dataset = ClassificationDataset(texts)
