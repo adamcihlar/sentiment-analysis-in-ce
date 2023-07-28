@@ -1,5 +1,6 @@
 import pandas as pd
 from typing import Type, List
+import os
 
 from src.config import paths
 from src.utils.datasets import ClassificationDataset
@@ -56,23 +57,42 @@ def evaluate(model: Type[AdaptiveSentimentClassifier], path_to_test: str):
     return test_ds
 
 
-if __name__ == "__main__":
-    texts = [
-        "prvni veta",
-        "druha veta",
-    ]
-
-    dataset = ClassificationDataset(texts)
-
-    asc = AdaptiveSentimentClassifier(
+def main(predict_scale=True):
+    model = AdaptiveSentimentClassifier(
         Preprocessor(),
         Tokenizer(),
         Encoder(),
         ClassificationHead,
         Discriminator(),
-        Encoder(path_to_finetuned=paths.OUTPUT_MODELS_ADAPTED_ENCODER_FINAL),
-        paths.OUTPUT_MODELS_FINETUNED_CLASSIFIER_FINAL,
-        inference_mode=True,
+        Encoder(path_to_finetuned=paths.OUTPUT_PROD_ENCODER),
+        paths.OUTPUT_PROD_CLASSIFIER,
     )
 
-    inference(asc, texts)
+    target_ds = ClassificationDataset(None)
+    target_ds.read_user_input()
+
+    target_ds.preprocess(model.preprocessor)
+    target_ds.tokenize(model.tokenizer)
+    target_ds.create_dataset()
+    target_ds.create_dataloader(4, False)
+
+    y_pred = model.bulk_predict(target_ds, predict_scale=predict_scale)
+
+    target_df = target_ds.get_predictions(external_anchor_set=False)
+    save_pth = os.path.join(paths.OUTPUT_PREDICTIONS, "sentiment_predictions.csv")
+    target_df.to_csv(save_pth)
+    logger.info(f"Results saved at {save_pth}.")
+    pass
+
+
+if __name__ == "__main__":
+    scale_str = input(
+        "Return the sentiment score on scale from 0 to 1 or as classes 0, 1, 2 (negative, neutral, positive)?  (scale/class)\n"
+    )
+    if scale_str == "scale":
+        scale = True
+    elif scale_str == "class":
+        scale = False
+    else:
+        raise ValueError('Input must be "scale" or "class".')
+    main(predict_scale=scale)
