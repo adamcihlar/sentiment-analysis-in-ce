@@ -130,7 +130,9 @@ dmypy.json
 
 ### User defined section
 data
-#models
+models
 #train_info
 assets/
 predictions/
+emails*
+input/
