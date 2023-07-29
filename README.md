@@ -1,4 +1,7 @@
 # Sentiment Analysis in Correspondence Experiments
+This repository contains code for master's thesis Sentiment Analysis in Correspondence Experiments written by Adam Cihlar at Masaryk University, Faculty of Economics and Administration, Department of Economics.
+It includes a sentiment analysis model based on Small-E-Czech which was simultaneously finetuned on public Czech sentiment datasets.
+The model can be used solely for evaluation of sentiment in Czech texts or with support of labelled data to enhance the model's performance on data coming from a different domain.
 
 ## How to run the finetuned sentiment model (without target adaptation)
 0. `git clone https://github.com/adamcihlar/sentiment-analysis-in-ce.git`
