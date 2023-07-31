@@ -4,7 +4,7 @@ It includes a sentiment analysis model based on Small-E-Czech which was simultan
 The model can be used solely for evaluation of sentiment in Czech texts or with support of labelled data to enhance the model's performance on data coming from a different domain.
 
 ## How to run the finetuned sentiment model (without target adaptation)
-0. `git clone https://github.com/adamcihlar/sentiment-analysis-in-ce.git`
+0. `git clone --depth 1 -b master https://github.com/adamcihlar/sentiment-analysis-in-ce.git`
 
 ### Interactive app
 #### With docker:
@@ -42,7 +42,7 @@ The model can be used solely for evaluation of sentiment in Czech texts or with 
 5. the predictions are saved at `output/predictions/sentiment_predictions.csv`
 
 ## How to run the sentiment model with support of labelled subset
-0. `git clone https://github.com/adamcihlar/sentiment-analysis-in-ce.git`
+0. `git clone --depth 1 -b master https://github.com/adamcihlar/sentiment-analysis-in-ce.git`
 ### Bulk predictions
 #### With docker:
 1. store the texts that should be evaluated in folder `input/` in `.csv` format (first row is a column name)
